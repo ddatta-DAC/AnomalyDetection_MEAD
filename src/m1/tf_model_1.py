@@ -6,6 +6,7 @@ import numpy as np
 import glob
 import pandas as pd
 import os
+from sklearn.manifold import TSNE
 
 from numpy.core._multiarray_umath import ndarray
 from sklearn.manifold import TSNE
@@ -118,10 +119,8 @@ class model:
                 # print("----> Layer", (l + 1))
                 if l == 0:
                     layer_inp_dims = self.domain_dims
-                    # layer_op_dims = [self.emb_dims[l]] * self.num_domains
                     layer_op_dims = layer_1_dims
-                    # print(layer_inp_dims)
-                    # print(layer_op_dims)
+
                 else:
                     if l == 1:
                         layer_inp_dims = layer_1_dims
@@ -217,6 +216,25 @@ class model:
 
     # ---------------------------------------------------------- #
 
+    def _add_var_summaries(self):
+        for var in tf.trainable_variables():
+            tf.summary.histogram(var.name, var)
+            continue
+
+            with tf.name_scope('summaries'):
+                mean = tf.reduce_mean(var)
+                tf.summary.scalar('mean', mean)
+
+            with tf.name_scope('stddev'):
+                stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+                tf.summary.scalar('stddev', stddev)
+                tf.summary.scalar('max', tf.reduce_max(var))
+                tf.summary.scalar('min', tf.reduce_min(var))
+        return
+
+
+
+
     def build_model(self):
         print('Building model : start ')
         self.model_scope_name = 'model'
@@ -268,7 +286,7 @@ class model:
                 # print(x_pos_WXb[d].shape)
 
             emb_op_pos = x_pos_WXb
-            emb_op_pos = [tf.nn.l2_normalize(_, axis=-1) for _ in emb_op_pos]
+            # emb_op_pos = [tf.nn.l2_normalize(_, axis=-1) for _ in emb_op_pos]
             print(emb_op_pos[0].shape)
 
             self.joint_emb_op = tf.stack(emb_op_pos, axis=1)
@@ -282,147 +300,79 @@ class model:
                 keepdims=False
             )
 
-
-
-            if self.inference:
-                return
-
             '''
             Optimization stage
             '''
-            # _target is the domain
-            loss = None
 
             # small epsilon to avoid any sort of underflows
             _epsilon = tf.constant(math.pow(10.0, -7.0))
-            self.score_n = []
 
-            # just for analysis
-            self.op_loss = []
+            # pairwise similarity
+            cos_dist = []
+            for i in range(self.num_domains):
+                for j in range(i+1, self.num_domains):
 
+                    r1 = tf.reduce_sum(
+                        tf.multiply(
+                            tf.nn.l2_normalize(emb_op_pos[i], axis=-1),
+                            tf.nn.l2_normalize(emb_op_pos[j], axis=-1),
+                        ),
+                        1,
+                        keepdims=True
+                    )
+                    d = 1.0 - r1
+                    cos_dist.append(d)
 
-            for _target in range(self.num_domains):
-                print('_target', _target)
-
-                ctxt_list = list(range(self.num_domains))
-                print(ctxt_list)
-
-                ctxt_list.remove(_target)
-                print(ctxt_list)
-                # print(ctxt_list)
-
-                e = tf.gather(
-                    self.joint_emb_op,
-                    indices=ctxt_list,
-                    axis=1
-                )
-
-                print(e)
-
-                # U is the mean of the embeddings of the context
-                # U is the context vector
-                U = tf.reduce_mean(e, axis=1)
-                print(U.shape)
-                print(emb_op_pos[_target].shape)
-
-                # normalize
+            cos_dist = tf.stack(cos_dist,axis=1)
+            cos_dist = tf.squeeze(cos_dist, axis=-1)
+            self.pairwise_cosine = cos_dist
 
 
-                score_pos = tf.reduce_sum(
-                    tf.multiply(
-                        emb_op_pos[_target],
-                        U
-                    ),
-                    1,
-                    keepdims=True
-                )
-                print(score_pos.shape)
-                score_pos = -score_pos
+            self.loss_1 = tf.reduce_mean(
+                tf.math.square(cos_dist),
+                axis=-1
+            )
+
+            # ensure embeddings sum to 1
+
+            norm_loss = []
+            for i in range(self.num_domains):
+                pass
+                t1 = tf.norm(emb_op_pos[i],axis=-1,keep_dims=True)
+                t1 = tf.square(1 - t1)
+                norm_loss.append(t1)
+
+            norm_loss = tf.stack(norm_loss,axis=1)
+            norm_loss = tf.squeeze(norm_loss, axis=-1)
+            norm_loss = tf.reduce_mean(norm_loss,axis=-1)
+            print(norm_loss.shape)
+
+            self.loss_2 =  norm_loss
+            self.loss = 0.5 * self.loss_1 + 0.5 * self.loss_2
+
+            regularizer_beta = tf.constant(math.pow(10, -7))
+
+            for _W in self.W :
+                regularizer = [ regularizer_beta * tf.nn.l2_loss(_) for _ in _W]
+                for _ in regularizer :
+                    self.loss += _
+            for _B in self.b:
+                regularizer = [regularizer_beta * tf.nn.l2_loss(_) for _ in _B]
+                for _ in regularizer:
+                    self.loss += _
+
+            print(' -->> ', self.loss.shape)
 
 
-                '''
-                calculate scores for each of the rest of possible entities
-                since weights in an iteration remain same,
-                calculate this per domain once
-                setting output to different 1s for that domain
-                
-                '''
+            # print('Loss shape', self.loss.shape)
+            tf.summary.scalar('loss', tf.reduce_mean(self.loss))
+            tf.summary.scalar('loss_1', tf.reduce_mean(self.loss_1))
+            tf.summary.scalar('loss_2', tf.reduce_mean(self.loss_2))
 
-                domain_size = self.domain_dims[_target]
-                # print('Domain size', domain_size)
-                _tmp = np.array(list(range(domain_size)))
-
-                domain_ids = tf.constant(_tmp)
-                domain_ids = tf.reshape(domain_ids, [-1, 1])
-                print(domain_ids)
-
-
-                prev = None
-                for l in range(self.num_emb_layers):
-
-                    if l == 0:
-                        a = tf.nn.embedding_lookup(
-                            self.W[l][_target],
-                            domain_ids
-                        )
-                        _wx = tf.squeeze(a, axis=1)
-                    else:
-                        _x = prev
-                        _wx = tf.matmul(
-                            _x,
-                            self.W[l][_target]
-                        )
-                    if self.use_bias:
-                        _wx_b = tf.add(
-                            _wx,
-                            self.b[l][_target]
-                        )
-                    else:
-                        _wx_b = _wx
-
-                    prev = _wx_b
-
-                wx_b = prev
-                wx_b = tf.nn.l2_normalize(wx_b,axis=-1)
-                print(wx_b.shape)
-
-                _score_n = tf.matmul(
-                    U,
-                    tf.transpose(wx_b)
-                )
-
-                _score_n = tf.exp(_score_n)
-
-                _score_n = tf.reduce_sum(
-                    _score_n,
-                    axis=1,
-                    keepdims=True
-                )
-
-
-                _score_n = tf.add(
-                    _score_n,
-                    _epsilon
-                )
-
-                _loss = tf.add(score_pos, tf.log(_score_n))
-                if loss is None:
-                    loss = _loss
-                else:
-                    loss = tf.add(loss, _loss)
-
-                self.op_loss.append(_loss)
-
-            self.op_loss = tf.stack(self.op_loss, axis=1)
-            self.op_loss = tf.squeeze(self.op_loss, axis=-1)
-            print(' -->> ', self.op_loss.shape)
             if self.inference:
                 return
 
-            self.loss = loss
-            # print('Loss shape', self.loss.shape)
-            tf.summary.scalar('loss', tf.reduce_mean(self.loss))
-
+            self._add_var_summaries()
             self.optimizer = tf.train.AdamOptimizer(
                 learning_rate=self.learning_rate
             )
@@ -430,12 +380,16 @@ class model:
             # self.train_opt = self.optimizer.minimize(self.loss)
             gvs = self.optimizer.compute_gradients(self.loss)
 
-            grad_summ_op = tf.summary.merge([tf.summary.histogram("%s-grad" % g[1].name, g[0]) for g in gvs])
+            grad_summ_op = tf.summary.merge(
+                [tf.summary.histogram(
+                    "%s-grad" % g[1].name, g[0]
+                ) for g in gvs
+                ]
+            )
+
             self.gradients = gvs
 
             tf.summary.all_v2_summary_ops()
-
-            # print([(grad, var) for grad, var in gvs])
             capped_gvs = [
                 (tf.clip_by_value(grad, -1.0, 1.0), var)
                 for grad, var in gvs
@@ -453,11 +407,9 @@ class model:
     def train_model(self, x):
         print('Start of training :: ')
         self.ts = str(time.time()).split('.')[0]
-        if self.test_SerialID is None:
-            f_name = 'frozen' + '_' + self.model_signature + '_' + self.ts + '.pb'
-        else:
-            f_name = 'frozen' + '_' + self.model_signature + '_serialID_' + str(
-                self.test_SerialID) + '_' + self.ts + '.pb'
+
+        f_name = 'frozen' + '_' + self.model_signature + '_' + self.ts + '.pb'
+
 
         self.frozen_file = os.path.join(
             self.save_dir, 'checkpoints', f_name
@@ -492,17 +444,17 @@ class model:
                 if _b == 0:
                     print(_x_pos.shape)
 
-                _, summary, loss = self.sess.run(
-                    [self.train_opt, self.summary, self.loss],
+                _, summary, loss1, loss2, loss = self.sess.run(
+                    [self.train_opt, self.summary, self.loss_1, self.loss_2, self.loss],
                     feed_dict={
                         self.x_pos_inp: _x_pos,
                     }
                 )
 
-
-                losses.append(np.mean(loss))
                 batch_loss = np.mean(loss)
+                losses.append(batch_loss)
                 print(batch_loss)
+
                 summary_writer.add_summary(summary, step)
                 step += 1
                 if np.isnan(batch_loss):
@@ -561,13 +513,49 @@ class model:
                     _x = x[_b * bs:]
 
                 _output = sess.run(
-                    self.mean_emb_op,
+                    self.concat_emb_op,
                     feed_dict={
                         self.x_pos_inp: _x
                     }
                 )
                 output.extend(_output)
             res = np.array(output)
+
+        return res
+
+    def get_embeddings(self, x):
+
+        self.restore_model()
+        output = []
+        bs = self.batch_size
+        num_batches = x.shape[0] // bs
+
+        with tf.Session(graph=self.restore_graph) as sess:
+            for _b in range(num_batches):
+                _x = x[_b * bs: (_b + 1) * bs]
+                if _b == num_batches - 1:
+                    _x = x[_b * bs:]
+
+                _output = sess.run(
+                    self.mean_emb_op,
+                    feed_dict={
+                        self.x_pos_inp: _x
+                    }
+                )
+                output.extend(_output)
+
+            res = np.array(output)
+            tf_data = tf.Variable(res)
+            saver = tf.train.Saver([tf_data])
+            sess.run(tf_data.initializer)
+            saver.save(sess, os.path.join('./..', 'tf_data.ckpt'))
+            config = projector.ProjectorConfig()
+            embedding = config.embeddings.add()
+            embedding.tensor_name = tf_data.name
+            projector.visualize_embeddings(
+                tf.summary.FileWriter('./..'),
+                config
+            )
 
         return res
 
@@ -610,3 +598,29 @@ class model:
         R = np.array(R)
 
         return R
+
+
+
+    def get_pairwise_cosine_dist(self, x):
+
+        self.restore_model()
+        output = []
+        bs = self.batch_size
+        num_batches = x.shape[0] // bs
+
+        with tf.Session(graph=self.restore_graph) as sess:
+            for _b in range(num_batches):
+                _x = x[_b * bs: (_b + 1) * bs]
+                if _b == num_batches - 1:
+                    _x = x[_b * bs:]
+
+                _output = sess.run(
+                    self.pairwise_cosine,
+                    feed_dict={
+                        self.x_pos_inp: _x
+                    }
+                )
+                output.extend(_output)
+            res = np.array(output)
+
+        return res
