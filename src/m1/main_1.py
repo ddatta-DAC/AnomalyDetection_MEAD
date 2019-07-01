@@ -35,9 +35,9 @@ except:
     from src.m1 import lof_1 as lof_1
 
 try:
-    from .src.m1 import tf_model_1 as tf_model
+    from .src.m1 import tf_model_2 as tf_model
 except:
-    from src.m1 import tf_model_1 as tf_model
+    from src.m1 import tf_model_2 as tf_model
 
 try:
     from .src.m1 import evaluation_v1 as evaluation_v1
@@ -154,6 +154,7 @@ def set_up_model(config, _dir):
         learning_rate=LR,
         alpha=config[_dir]['alpha']
     )
+    model_obj.inference = False
     model_obj.build_model()
     return model_obj
 
@@ -167,6 +168,7 @@ def process(
 ):
     model_obj = set_up_model(CONFIG, _DIR)
 
+    return
     _use_pretrained = CONFIG[_DIR]['use_pretrained']
 
     if _use_pretrained is True:
@@ -351,7 +353,7 @@ def main():
     # ------------
 
     time_1 = time.time()
-    process_2(
+    process(
         CONFIG,
         _DIR,
         data_x,
