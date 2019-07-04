@@ -466,6 +466,7 @@ class model:
             num_or_size_splits = self.num_neg_samples,
             axis = 1
         )
+
         # Create list of N (= num of neg samples) list of inputs of shape [?, num_domains]
         x_neg_inp_arr = [ tf.squeeze(_,axis=1) for _ in x_neg_inp_arr ]
         emb_op_neg = []
