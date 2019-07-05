@@ -1,0 +1,12 @@
+'DATA_DIR': '../../generated_data'
+'_DIR' : 'china_import'
+'OP_DIR' : 'output'
+'SAVE_DIR' : 'save_dir'
+'MODEL_NAME': 'model_ape'
+'saved_model_file' : 'model_ape_10_k_24_frozen.pb'
+'china_import':
+  'embed_size': 10
+  'num_epocs': 10
+  'batch_size': 512
+  'use_pretrained': True
+  'learning_rate': 0.001

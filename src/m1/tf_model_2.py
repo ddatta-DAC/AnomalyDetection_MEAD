@@ -35,8 +35,6 @@ class model:
         self.use_bias = True
         self.save_loss_fig = True
         self.show_figure = False
-        self.use_activation = False
-        self.test_SerialID = None
         self._model_name = MODEL_NAME
         self.num_neg_samples = 3
         return
@@ -62,13 +60,19 @@ class model:
         self.model_signature = MODEL_NAME + '_'.join([str(e) for e in emb_dims])
         self.use_bias = use_bias
         self.alpha = alpha
+        self.summary_data_loc = os.path.join(
+            self.op_dir,
+            'summary_data'
+        )
+        if not os.path.exists(self.summary_data_loc):
+            os.mkdir(self.summary_data_loc)
+
         return
 
     def set_model_options(
             self,
             show_loss_figure,
-            save_loss_figure,
-            set_w_mean=True
+            save_loss_figure
     ):
         self.show_loss_figure = show_loss_figure
         self.save_loss_figure = save_loss_figure
@@ -377,8 +381,12 @@ class model:
             print(norm_loss.shape)
 
             self.loss_2 =  norm_loss
-            self.loss = 0.5 * self.loss_1 + 0.5 * self.loss_2
+            self.loss = 0.1 * self.loss_1 + 0.5 * self.loss_2
             print(' shape of loss -->> ', self.loss.shape)
+
+
+            # L2 regularization of weights in embedding layer
+
             regularizer_beta = tf.constant(math.pow(10, -10))
 
             for _W in self.W :
@@ -432,7 +440,7 @@ class model:
     '''
     batch_d_arr_tensor :  [[?,dom1] , [?,dom_2], ... ]
     '''
-    def get_norm_b(self, batch_d_arr_tensor):
+    def get_norm_b(self, batch_d_arr_tensor , reciprocal = False):
         norm_b = []
 
         for d in range(self.num_domains):
@@ -444,10 +452,13 @@ class model:
         norm_b = tf.stack(norm_b, axis=1)
         norm_b = tf.reduce_sum(norm_b, axis=-2)
         norm_b = tf.reduce_sum(tf.square(norm_b), axis=-1, keepdims=True)
+        if reciprocal :
+            norm_b = tf.pow(norm_b,-1)
         r_b = tf.tanh(0.5 * norm_b)
         return r_b
 
 
+    # This part should be used for norm based optimization
     def neg_sample_optimization(self):
 
         # ---------------
@@ -469,69 +480,45 @@ class model:
 
         # Create list of N (= num of neg samples) list of inputs of shape [?, num_domains]
         x_neg_inp_arr = [ tf.squeeze(_,axis=1) for _ in x_neg_inp_arr ]
-        emb_op_neg = []
+        # emb_op_neg = []
         r_b_neg = []
+
         for _neg in range(self.num_neg_samples):
             x_inp_neg = tf.split(
                 x_neg_inp_arr[_neg],
                 self.num_domains,
                 axis=-1
             )
-            emb_op_n = self.get_inp_embeddings(x_inp_neg)
-            r_b = self.get_norm_b(batch_d_arr_tensor = emb_op_n)
-            r_b_neg.append(r_b)
-            emb_op_n = tf.stack(emb_op_n,axis=1)
-            emb_op_neg.append(emb_op_n)
 
-        r_b_neg = tf.stack(r_b_neg,axis=-1)
-        r_b_neg = tf.squeeze(r_b_neg,axis=1)
+            emb_op_n = self.get_inp_embeddings(x_inp_neg)
+            r_b = self.get_norm_b(
+                batch_d_arr_tensor = emb_op_n,
+                reciprocal=True
+            )
+            r_b_neg.append(r_b)
+
+            # emb_op_n = tf.stack(emb_op_n,axis=1)
+            # emb_op_neg.append(emb_op_n)
+
+        r_b_neg = tf.stack(
+            r_b_neg,
+            axis=-1
+        )
+
+        r_b_neg = tf.squeeze(
+            r_b_neg,
+            axis=1
+        )
+
         print(r_b_neg)
 
-        '''
-        Probability of positive event : P_pos_e
-        Probability of negative event : P_neg_e
-        2nd term in the optimisation function of APE : log_k_P_n_pose
-        4th term in the optimization function of APE : log_k_P_n_nege
-        '''
+        # calculate loss
+        loss_3 = tf.log(self.r_b)
+        _tmp = tf.log(r_b_neg)
+        _tmp = tf.reduce_sum(_tmp, axis=-1,keepdims=True)
 
-        log_k_P_n_posDe = None
-        log_k_P_n_negDe = None
+        self.loss_3 = -tf.add(loss_3, _tmp)
 
-        log_k_P_n_posDe = tf.placeholder (
-            tf.float32, [
-                None,
-               1
-            ]
-        )
-
-        log_k_P_n_negDe = tf.placeholder(
-            tf.float32, [
-                None,
-                self.num_neg_samples,
-                1
-            ]
-        )
-
-
-        P_pos_e = self.r_b
-        P_neg_e = r_b_neg
-
-        part_1 = tf.log(
-            tf.sigmoid(
-                tf.exp(P_pos_e) + log_k_P_n_posDe
-            )
-        )
-        part_2 = -tf.log(P_neg_e) + log_k_P_n_negDe
-        part_2 = tf.log(
-            tf.sigmoid(part_2)
-        )
-        part_2 = tf.reduce_sum(
-            part_2,
-            axis= -1,
-            keepdims=True
-        )
-
-        self.loss_3 =  - (part_1 + part_2)
         tf.summary.scalar('loss_2', tf.reduce_mean(self.loss_3))
         self.loss = self.loss + self.loss_3
         return
@@ -565,8 +552,8 @@ class model:
 
         print('Num batches :', num_batches)
 
-        self.output_dir = './..'
-        summary_writer = tf.summary.FileWriter(self.output_dir + '/test')
+
+        summary_writer = tf.summary.FileWriter(self.summary_data_loc )
         step = 0
 
         for e in range(self.num_epochs):
@@ -630,10 +617,6 @@ class model:
             plt.close()
         return self.frozen_file
 
-    # This is an external function
-    # x is the index data
-    # ep is entity probability
-
     def get_embedding_mean(self, x):
         self.set_w_mean = False
         self.restore_model()
@@ -693,8 +676,11 @@ class model:
 
         return res
 
-    def get_w_embedding_mean(self, x, ep):
-        self.set_w_mean = True
+    def get_event_score(
+            self,
+            x,
+            ep
+    ):
         self.restore_model()
         output = []
         bs = self.batch_size
@@ -708,30 +694,17 @@ class model:
                     _x = x[_b * bs:]
                     _ep = ep[_b * bs:]
                 _output = sess.run(
-                    self.w_mean_emb_op,
-                    feed_dict={
+                    self.r_b,
+
+                    feed_dict= {
                         self.x_pos_inp: _x,
-                        self.entity_prob_x: _ep
                     }
                 )
+
                 output.extend(_output)
             res = np.array(output)
+            return res
 
-        # remove the 1st singular vector
-
-        A = np.transpose(res)
-        U, S, Vt = randomized_svd(A, n_components=1)
-        # U, s, VT = svd(A,full_matrices=False)
-        U_1 = U
-        tmp = np.dot(U_1, np.transpose(U_1))
-
-        R = []
-        for r in res:
-            r = r - np.matmul(tmp, r)
-            R.append(r)
-        R = np.array(R)
-
-        return R
 
     def get_pairwise_cosine_dist(self, x):
 

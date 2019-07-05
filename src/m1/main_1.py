@@ -190,8 +190,9 @@ def process(
     elif _use_pretrained is False:
         model_obj.train_model(data_x)
 
-    emb = model_obj.get_embeddings(data_x)
-    emb = np.reshape
+
+    score_op1 = model_obj.get_event_score()
+
     mean_embeddings = model_obj.get_embedding_mean(data_x)
 
     print('Number of true anomalies', len(anomaly_ids))
