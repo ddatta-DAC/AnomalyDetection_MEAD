@@ -23,6 +23,7 @@ import time
 from collections import OrderedDict
 import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import auc
 
 import glob
 import logging
@@ -139,11 +140,7 @@ def setup():
     domain_dims = get_domain_arity()
     cur_path = get_cur_path()
 
-    # logging.basicConfig(
-    #     filename = os.path.join( OP_DIR, 'ape.log'),
-    #     filemode = 'w',
-    #     format='%(name)s - %(levelname)s - %(message)s'
-    # )
+
     handler = logging.handlers.WatchedFileHandler(
         os.environ.get("LOGFILE", os.path.join( OP_DIR, 'ape.log')))
     formatter = logging.Formatter(logging.BASIC_FORMAT)
@@ -188,10 +185,13 @@ def main():
 
 
     neg_samples = train_x_neg.shape[1]
-
     start_time = time.time()
     num_domains = len(domain_dims)
     inp_dims = list(domain_dims.values())
+
+    print('Number of domains ', num_domains )
+    print(' domains ', inp_dims)
+
     model_obj = tf_model_ape_1.model_ape_1(MODEL_NAME)
 
 
@@ -229,34 +229,45 @@ def main():
     '''
 
     test_normal_ids = test_pos[0]
-    test_anomaly_ids = test_anomaly[0]
-    test_ids = list(np.hstack([test_normal_ids, test_anomaly_ids]))
-
+    test_anomaly_ids = test_anomaly[0][:5000]
+    test_ids = list(np.hstack(
+        [test_normal_ids,
+         test_anomaly_ids]
+    ))
+    print (' Len of test_ids ', len(test_ids))
     test_normal_data = test_pos[1]
-    test_anomaly_data = test_anomaly[1]
+    test_anomaly_data = test_anomaly[1][:5000]
     test_data_x = np.vstack([
         test_normal_data,
         test_anomaly_data
     ])
 
+    # ---------- #
+    bounds = []
+    training_pos_scores = model_obj.inference(
+        train_x_pos
+    )
+    training_pos_scores = [_[0] for _ in training_pos_scores]
+
+    train_noise = np.reshape(train_x_neg,[-1,train_x_pos.shape[-1]])
+    training_noise_scores = model_obj.inference(
+        train_noise
+    )
+    training_noise_scores = [_[0] for _ in training_noise_scores]
+
+    bounds.append(min(training_noise_scores))
+    bounds.append(max(training_pos_scores))
+    # ---------- #
+
+    print('Length of test data',test_data_x.shape)
     res = model_obj.inference(
         test_data_x
     )
 
     test_ids = list(test_ids)
-    print(len(res))
-    print(res[:100])
+    print('Length of results ', len(res))
 
-    #  Scale between 0 and 1
-    obj_scaler = MinMaxScaler()
-    _res = np.reshape(
-        res,
-        [-1,1]
-    )
 
-    obj_scaler.fit(_res)
-    _res = obj_scaler.transform(_res)
-    res = np.reshape(_res,[-1])
     res = list(res)
     _id_score_dict = {
         id: _res for id, _res in zip(test_ids, res)
@@ -273,14 +284,15 @@ def main():
     sorted_id_score_dict = OrderedDict()
 
     for e in tmp:
-        sorted_id_score_dict[e[0]] = e[1]
+        sorted_id_score_dict[e[0]] = e[1][0]
+
+
 
     recall, precison = eval.precision_recall_curve(
         sorted_id_score_dict,
-        anomaly_id_list=test_anomaly_ids
+        anomaly_id_list=test_anomaly_ids,
+        bounds = bounds
     )
-
-    from sklearn.metrics import auc
 
     _auc = auc(recall, precison)
     logging.info('AUC')
@@ -309,7 +321,6 @@ def main():
         test_result_p.append(precison)
         plt.close()
     '''
-
     print('----------------------------')
 
     end_time = time.time()

@@ -247,7 +247,7 @@ class model_ape_1:
                 self.term_4 = tf.placeholder(
                     tf.float32,
                     shape=(
-                        [None, self.neg_samples]
+                        [None, self.neg_samples,1]
                     )
                 )
 
@@ -390,7 +390,10 @@ class model_ape_1:
             obj = tf.log(tf.sigmoid(tf.log(P_e) - self.term_2) + self.epsilon)
             print('1', tf.sigmoid(tf.log(P_e)))
             print('z3', z3)
-            z4 = tf.log(tf.sigmoid(-z3 + self.term_4) + self.epsilon)
+            z4 = tf.squeeze(self.term_4,axis=-1)
+
+
+            z4 = tf.log(tf.sigmoid(-z3 + z4) + self.epsilon)
             z5 = tf.reduce_sum(z4, axis=-1, keepdims=True)
             obj += z5
             self.obj = obj
@@ -427,9 +430,11 @@ class model_ape_1:
                     print('Batch :', _b)
                 _x_pos = x_pos[_b * bs: (_b + 1) * bs]
                 _x_neg = x_neg[_b * bs: (_b + 1) * bs]
-                _term_2 = term_2[_b * bs: (_b + 1) * bs, :1]
-                _term_4 = term_4[_b * bs: (_b + 1) * bs]
-
+                _term_2 = term_2[_b * bs: (_b + 1) * bs]
+                _term_4 = term_4[_b * bs: (_b + 1) * bs,:,:]
+                # print(_term_2.shape)
+                # print(_term_4.shape)
+                # exit(1)
 
                 _, loss = self.sess.run(
                     [self.train_opt, self.obj],

@@ -6,7 +6,7 @@
 'saved_model_file' : 'model_ape_10_k_24_frozen.pb'
 'china_import':
   'embed_size': 10
-  'num_epocs': 10
-  'batch_size': 512
+  'num_epocs': 5
+  'batch_size': 128
   'use_pretrained': True
   'learning_rate': 0.001

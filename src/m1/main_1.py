@@ -22,37 +22,39 @@ from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
 import yaml
 from sklearn.metrics import auc
+import logging
+import logging.handlers
 
 # matplotlib.use('Agg')
 sys.path.append('./..')
 sys.path.append('./../../.')
 
-import src.m1.lof_1 as lof_1
 
 try:
-    from .src.m1 import lof_1 as lof_1
-except:
     from src.m1 import lof_1 as lof_1
+except:
+    from .src.m1 import lof_1 as lof_1
 
 try:
-    from .src.m1 import tf_model_2 as tf_model
-except:
     from src.m1 import tf_model_2 as tf_model
+except:
+    from .src.m1 import tf_model_2 as tf_model
 
 try:
-    from .src.m1 import evaluation_v1 as evaluation_v1
+    from src.Eval import eval_v1 as evaluation_v1
 except:
-    from src.m1 import evaluation_v1 as evaluation_v1
+    from .src.Eval import eval_v1 as evaluation_v1
 
 try:
-    from .src.m1 import isolation_forest as IF
-except:
     from src.m1 import isolation_forest as IF
+except:
+    from .src.m1 import isolation_forest as IF
 
 try:
-    from .src.m1 import data_fetcher as data_fetcher
+    from src.data_fetcher import data_fetcher as data_fetcher
 except:
-    from src.m1 import data_fetcher as data_fetcher
+    from .src.data_fetcher import data_fetcher as data_fetcher
+
 
 # ------------------------------------ #
 
@@ -119,6 +121,16 @@ def setup_general_config():
 
     if not os.path.exists(SAVE_DIR):
         os.mkdir(os.path.join(SAVE_DIR))
+
+    handler = logging.handlers.WatchedFileHandler(
+        os.environ.get("LOGFILE", os.path.join(OP_DIR, 'ape.log')))
+    formatter = logging.Formatter(logging.BASIC_FORMAT)
+    handler.setFormatter(formatter)
+    root = logging.getLogger()
+    root.setLevel(os.environ.get("LOGLEVEL", "INFO"))
+    root.addHandler(handler)
+
+    logging.info('Info start')
     return
 
 
@@ -151,8 +163,7 @@ def set_up_model(config, _dir):
         emb_dims=embedding_dims,
         batch_size=config[_dir]['batchsize'],
         num_epochs=config[_dir]['num_epochs'],
-        learning_rate=LR,
-        alpha=config[_dir]['alpha']
+        learning_rate=LR
     )
     model_obj.inference = False
     model_obj.build_model()
@@ -162,17 +173,17 @@ def set_up_model(config, _dir):
 def process(
         CONFIG,
         _DIR,
-        data_x,
-        normal_ids,
-        anomaly_ids
+        train_x_pos,
+        train_x_neg,
+        test_pos,
+        test_anomaly,
+        domain_dims
+
 ):
     model_obj = set_up_model(CONFIG, _DIR)
-
-    return
     _use_pretrained = CONFIG[_DIR]['use_pretrained']
 
     if _use_pretrained is True:
-
         saved_file_path = None
         pretrained_file = CONFIG[_DIR]['saved_model_file']
 
@@ -185,11 +196,12 @@ def process(
         if saved_file_path is not None:
             model_obj.set_pretrained_model_file(saved_file_path)
         else:
-            model_obj.train_model(data_x)
+            model_obj.train_model(train_x_pos, train_x_neg)
 
     elif _use_pretrained is False:
-        model_obj.train_model(data_x)
+        model_obj.train_model(train_x_pos, train_x_neg)
 
+    return
 
     score_op1 = model_obj.get_event_score()
 
@@ -203,7 +215,6 @@ def process(
 
     all_ids = list(anomaly_ids)
     all_ids.extend(normal_ids)
-
     sorted_id_score_dict = IF.anomaly_1(
         id_list=all_ids,
         embed_list=mean_embeddings
@@ -224,6 +235,7 @@ def process(
 
     # return cur_auc, recall, precison
 
+'''
 def process_2(
         CONFIG,
         _DIR,
@@ -295,8 +307,7 @@ def process_2(
         # plt.legend(handles=label_patches, loc='upper left')
         ax.legend(_labels)
         plt.show()
-
-
+'''
 
 def viz_tsne(data):
     from sklearn.manifold import TSNE
@@ -340,26 +351,25 @@ def main():
 
     # ------------ #
 
-    data_x, normal_ids, anomaly_ids = data_fetcher.get_data(
+
+    train_x_pos, train_x_neg, test_pos, test_anomaly , domain_dims  = data_fetcher.get_data_v2(
         DATA_DIR,
         _DIR
     )
 
     DOMAIN_DIMS = get_domain_dims()
-    print('Data shape', data_x.shape)
+    print('Data shape', train_x_pos.shape)
     lof_1.KNN_K = CONFIG[_DIR]['lof_K']
-
-    # ------------
-    # 10 test cases
-    # ------------
 
     time_1 = time.time()
     process(
         CONFIG,
         _DIR,
-        data_x,
-        normal_ids,
-        anomaly_ids
+        train_x_pos,
+        train_x_neg,
+        test_pos,
+        test_anomaly ,
+        domain_dims
     )
 
     time_2 = time.time()

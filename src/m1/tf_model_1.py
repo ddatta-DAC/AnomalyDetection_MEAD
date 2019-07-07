@@ -451,6 +451,8 @@ class model:
                     }
                 )
 
+
+
                 batch_loss = np.mean(loss)
                 losses.append(batch_loss)
                 print(batch_loss)
