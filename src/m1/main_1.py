@@ -50,9 +50,9 @@ except:
     from src.m1 import isolation_forest as IF
 
 try:
-    from .src.m1 import data_fetcher as data_fetcher
+    from .src.data_fetcher import data_fetcher as data_fetcher
 except:
-    from src.m1 import data_fetcher as data_fetcher
+    from src.data_fetcher import data_fetcher as data_fetcher
 
 # ------------------------------------ #
 
@@ -151,8 +151,7 @@ def set_up_model(config, _dir):
         emb_dims=embedding_dims,
         batch_size=config[_dir]['batchsize'],
         num_epochs=config[_dir]['num_epochs'],
-        learning_rate=LR,
-        alpha=config[_dir]['alpha']
+        learning_rate=LR
     )
     model_obj.inference = False
     model_obj.build_model()
@@ -167,8 +166,6 @@ def process(
         anomaly_ids
 ):
     model_obj = set_up_model(CONFIG, _DIR)
-
-    return
     _use_pretrained = CONFIG[_DIR]['use_pretrained']
 
     if _use_pretrained is True:
@@ -340,7 +337,7 @@ def main():
 
     # ------------ #
 
-    data_x, normal_ids, anomaly_ids = data_fetcher.get_data(
+    data_x, normal_ids, anomaly_ids = data_fetcher.get_data_v0(
         DATA_DIR,
         _DIR
     )

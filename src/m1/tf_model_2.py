@@ -46,9 +46,9 @@ class model:
             use_bias=True,
             batch_size=128,
             num_epochs=20,
-            learning_rate=0.001,
-            alpha=0.0025
+            learning_rate=0.001
     ):
+
         MODEL_NAME = self._model_name
         self.learning_rate = learning_rate
         self.num_domains = len(domain_dims)
@@ -59,7 +59,6 @@ class model:
         self.num_epochs = num_epochs
         self.model_signature = MODEL_NAME + '_'.join([str(e) for e in emb_dims])
         self.use_bias = use_bias
-        self.alpha = alpha
         self.summary_data_loc = os.path.join(
             self.op_dir,
             'summary_data'
@@ -80,8 +79,6 @@ class model:
         self.inference = False
         return
 
-    def set_SerialID(self, test_SerialID):
-        self.test_SerialID = test_SerialID
 
     def get_weight_variable(
             self,
@@ -185,6 +182,9 @@ class model:
 
         print('>> Defining weights :: end')
 
+
+    # --------------------------- #
+
     def restore_model(self):
 
         # Model already restored!
@@ -192,6 +192,7 @@ class model:
             return
 
         self.inference = True
+
         if self.frozen_file is None:
             # ensure embedding dimensions are correct
             emb = '_'.join([str(_) for _ in self.emb_dims])
@@ -343,30 +344,14 @@ class model:
             # small epsilon to avoid any sort of underflows
             _epsilon = tf.constant(math.pow(10.0, -7.0))
 
-            # pairwise similarity
-            cos_dist = []
-            for i in range(self.num_domains):
-                for j in range(i+1, self.num_domains):
 
-                    r1 = tf.reduce_sum(
-                        tf.multiply(
-                            tf.nn.l2_normalize(emb_op_pos[i], axis=-1),
-                            tf.nn.l2_normalize(emb_op_pos[j], axis=-1),
-                        ),
-                        1,
-                        keepdims=True
-                    )
-                    d = 1.0 - r1
-                    cos_dist.append(d)
+            self.pairwise_ang_dist = self.calculate_angular_sim(emb_op_pos)
 
-            cos_dist = tf.stack(cos_dist,axis=1)
-            cos_dist = tf.squeeze(cos_dist, axis=-1)
-            self.pairwise_cosine = cos_dist
+            if self.inference is False:
+                self.neg_sample_optimization()
+            else:
+                return
 
-            self.loss_1 = tf.reduce_mean(
-                tf.math.square(cos_dist),
-                axis=-1
-            )
 
             # ensure embeddings sum to 1
             norm_loss = []
@@ -377,11 +362,12 @@ class model:
 
             norm_loss = tf.stack(norm_loss,axis=1)
             norm_loss = tf.squeeze(norm_loss, axis=-1)
-            norm_loss = tf.reduce_mean(norm_loss,axis=-1)
+            norm_loss = tf.reduce_mean(norm_loss,axis=-1,keepdims=True)
             print(norm_loss.shape)
 
             self.loss_2 =  norm_loss
-            self.loss = 0.1 * self.loss_1 + 0.5 * self.loss_2
+            self.loss = 0.25 * self.loss_1 + 0.5 * self.loss_2
+            self.loss = self.loss + self.loss_3
             print(' shape of loss -->> ', self.loss.shape)
 
 
@@ -401,10 +387,6 @@ class model:
             print(' shape of loss -->> ', self.loss.shape)
 
 
-            if self.inference is False:
-                self.neg_sample_optimization()
-            else:
-                return
 
             # print('Loss shape', self.loss.shape)
             tf.summary.scalar('loss', tf.reduce_mean(self.loss))
@@ -478,24 +460,33 @@ class model:
             axis = 1
         )
 
-        # Create list of N (= num of neg samples) list of inputs of shape [?, num_domains]
-        x_neg_inp_arr = [ tf.squeeze(_,axis=1) for _ in x_neg_inp_arr ]
-        # emb_op_neg = []
-        r_b_neg = []
 
+        '''
+        Create list of N (= num of neg samples) list of inputs of shape [?, num_domains]
+        '''
+        x_neg_inp_arr = [ tf.squeeze(_,axis=1) for _ in x_neg_inp_arr ]
+
+
+        r_b_neg = []
+        ang_dist_neg = []
         for _neg in range(self.num_neg_samples):
             x_inp_neg = tf.split(
                 x_neg_inp_arr[_neg],
                 self.num_domains,
                 axis=-1
             )
-
+            # Get the embedding of negative sample
             emb_op_n = self.get_inp_embeddings(x_inp_neg)
+
             r_b = self.get_norm_b(
                 batch_d_arr_tensor = emb_op_n,
                 reciprocal=True
             )
             r_b_neg.append(r_b)
+
+            ad_n = self.calculate_angular_sim(emb_op_n)
+            print(ad_n.shape)
+            ang_dist_neg.append(ad_n)
 
             # emb_op_n = tf.stack(emb_op_n,axis=1)
             # emb_op_neg.append(emb_op_n)
@@ -510,17 +501,42 @@ class model:
             axis=1
         )
 
-        print(r_b_neg)
+        print('r_b_neg shape ', r_b_neg.shape)
+
+        ang_dist_neg  = tf.stack(
+            ang_dist_neg,
+            axis=-1
+        )
+
+
+        ang_dist_neg = tf.squeeze(
+            ang_dist_neg,
+            axis=1
+        )
+
+        print('ang_dist_neg shape', ang_dist_neg.shape)
+
+        part_1 = tf.square(self.pairwise_ang_dist)
+        part_2 = tf.reduce_mean(ang_dist_neg,axis=-1,keepdims=True)
+        part_2 = tf.square(part_2)
+
+        self.loss_1 = tf.add(
+            part_1,
+            -part_2
+        )
 
         # calculate loss
         loss_3 = tf.log(self.r_b)
         _tmp = tf.log(r_b_neg)
-        _tmp = tf.reduce_sum(_tmp, axis=-1,keepdims=True)
+        _tmp = tf.reduce_sum(
+            _tmp,
+            axis=-1,
+            keepdims=True
+        )
 
         self.loss_3 = -tf.add(loss_3, _tmp)
+        tf.summary.scalar('loss_3', tf.reduce_mean(self.loss_3))
 
-        tf.summary.scalar('loss_2', tf.reduce_mean(self.loss_3))
-        self.loss = self.loss + self.loss_3
         return
 
     def set_pretrained_model_file(self, f_path):
@@ -557,9 +573,10 @@ class model:
         step = 0
 
         for e in range(self.num_epochs):
-
+            print('epoch :: ',e)
             t1 = time.time()
             for _b in range(num_batches):
+                print(' batch ::', _b)
                 _x_pos = x_pos[_b * bs: (_b + 1) * bs]
                 if _b == num_batches - 1:
                     _x_pos = x_pos[_b * bs:]
@@ -641,7 +658,7 @@ class model:
 
         return res
 
-    def get_op_embeddings(self, x):
+    def getpart_2_op_embeddings(self, x):
         self.restore_model()
         output = []
         bs = self.batch_size
@@ -704,6 +721,32 @@ class model:
                 output.extend(_output)
             res = np.array(output)
             return res
+
+
+    '''
+    Follow the angular distance than cosine distance
+    Input : [ ?, num_domains, emb_dim ]
+    '''
+    def calculate_angular_sim(self, emb_op):
+        self.pi = 180
+        ang_dist = []
+        for i in range(self.num_domains):
+            for j in range(i + 1, self.num_domains):
+                r1 = tf.reduce_sum(
+                    tf.multiply(
+                        tf.nn.l2_normalize(emb_op[i], axis=-1),
+                        tf.nn.l2_normalize(emb_op[j], axis=-1),
+                    ),
+                    1,
+                    keepdims=True
+                )
+                _dist = tf.acos(r1)/(self.pi)
+                ang_dist.append(_dist)
+
+        ang_dist = tf.stack(ang_dist, axis=1)
+        ang_dist = tf.squeeze(ang_dist, axis=-1)
+        ang_dist = tf.reduce_mean(ang_dist, axis=-1,keep_dims=True)
+        return ang_dist
 
 
     def get_pairwise_cosine_dist(self, x):
