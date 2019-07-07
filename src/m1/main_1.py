@@ -56,6 +56,7 @@ except:
     from .src.data_fetcher import data_fetcher as data_fetcher
 
 
+
 # ------------------------------------ #
 
 cur_path = '/'.join(
@@ -350,7 +351,6 @@ def main():
         os.mkdir(os.path.join(SAVE_DIR, 'checkpoints'))
 
     # ------------ #
-
 
     train_x_pos, train_x_neg, test_pos, test_anomaly , domain_dims  = data_fetcher.get_data_v2(
         DATA_DIR,

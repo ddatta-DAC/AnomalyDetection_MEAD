@@ -466,6 +466,7 @@ class model:
         '''
         x_neg_inp_arr = [ tf.squeeze(_,axis=1) for _ in x_neg_inp_arr ]
 
+
         r_b_neg = []
         ang_dist_neg = []
         for _neg in range(self.num_neg_samples):
