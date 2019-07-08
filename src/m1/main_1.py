@@ -214,14 +214,14 @@ def process(
         )
 
     test_normal_ids = test_pos[0]
-    test_anomaly_ids = test_anomaly[0][:2000]
+    test_anomaly_ids = test_anomaly[0][9500:12000]
     test_ids = list(np.hstack(
         [test_normal_ids,
          test_anomaly_ids]
     ))
     print(' Len of test_ids ', len(test_ids))
     test_normal_data = test_pos[1]
-    test_anomaly_data = test_anomaly[1][:2000]
+    test_anomaly_data = test_anomaly[1][9500:12000]
     test_data_x = np.vstack([
         test_normal_data,
         test_anomaly_data
@@ -434,7 +434,7 @@ def main():
 
     # ------------ #
 
-    train_x_pos, train_x_neg, test_pos, test_anomaly , domain_dims  = data_fetcher.get_data_v2(
+    train_x_pos, train_x_neg, test_pos, test_anomaly , domain_dims  = data_fetcher.get_data_v3(
         CONFIG['DATA_DIR'],
         _DIR
     )

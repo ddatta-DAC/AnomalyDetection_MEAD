@@ -364,7 +364,7 @@ class model:
             print(norm_loss.shape)
 
             self.loss_2 = norm_loss
-            self.loss = 0.001 * self.loss_1 +  self.loss_2
+            self.loss = self.loss_1 +  self.loss_2
             self.loss = self.loss + self.loss_3
             print(' shape of loss -->> ', self.loss.shape)
 
@@ -382,8 +382,6 @@ class model:
 
             print(' shape of loss -->> ', self.loss.shape)
             '''
-
-
 
 
             # print('Loss shape', self.loss.shape)
@@ -464,6 +462,8 @@ class model:
 
         r_b_neg = []
         ang_dist_neg = []
+        and_dist_pos = self.pairwise_ang_dist
+
         for _neg in range(self.num_neg_samples):
             x_inp_neg = tf.split(
                 x_neg_inp_arr[_neg],
@@ -481,6 +481,10 @@ class model:
 
             ad_n = self.calculate_angular_sim(emb_op_n)
             print(ad_n.shape)
+            ad_n = tf.add(
+                ad_n,
+                -and_dist_pos
+            )
             ang_dist_neg.append(ad_n)
 
             # emb_op_n = tf.stack(emb_op_n,axis=1)
@@ -510,14 +514,11 @@ class model:
 
         print('ang_dist_neg shape', ang_dist_neg.shape)
 
-        part_1 = tf.square(self.pairwise_ang_dist)
+        # part_1 = tf.square(self.pairwise_ang_dist)
         part_2 = tf.reduce_mean(ang_dist_neg, axis=-1, keepdims=True)
-        part_2 = tf.square(part_2)
+        # part_2 = tf.square(part_2)
 
-        self.loss_1 = tf.add(
-            part_1,
-            -part_2
-        )
+        self.loss_1 = part_2
 
         # calculate loss
         loss_3 = tf.log(self.r_b)
@@ -530,7 +531,6 @@ class model:
 
         self.loss_3 = -tf.add(loss_3, _tmp)
         tf.summary.scalar('loss_3', tf.reduce_mean(self.loss_3))
-
         return
 
     def set_pretrained_model_file(self, f_path):
@@ -736,7 +736,7 @@ class model:
 
         ang_dist = tf.stack(ang_dist, axis=1)
         ang_dist = tf.squeeze(ang_dist, axis=-1)
-        ang_dist = tf.reduce_mean(ang_dist, axis=-1, keep_dims=True)
+        ang_dist = tf.reduce_sum(ang_dist, axis=-1, keep_dims=True)
         return ang_dist
 
     # def get_pairwise_cosine_dist(self, x):

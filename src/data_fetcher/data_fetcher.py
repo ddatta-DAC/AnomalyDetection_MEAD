@@ -169,3 +169,66 @@ def get_data_v2(
     return train_x_pos, train_x_neg, test_pos, test_anomaly , domain_dims
 
 
+
+def get_data_v3(
+        DATA_DIR,
+        DIR
+):
+    with open(os.path.join(
+            DATA_DIR,
+            DIR,
+            'domain_dims.pkl'
+    ), 'rb') as fh:
+        domain_dims = pickle.load(fh)
+
+
+    train_x_pos_file = os.path.join(
+        DATA_DIR,
+        DIR,
+        'matrix_train_positive_v1.pkl'
+    )
+
+    with open(train_x_pos_file, 'rb') as fh:
+        train_x_pos = pickle.load(fh)
+
+    train_x_neg_file = os.path.join(
+        DATA_DIR,
+        DIR,
+        'negative_samples_v1.pkl'
+    )
+
+    with open(train_x_neg_file, 'rb') as fh:
+        train_x_neg = pickle.load(fh)
+
+    test_x_file = os.path.join(
+        DATA_DIR,
+        DIR,
+        'matrix_test_positive.pkl'
+    )
+
+    with open(test_x_file, 'rb') as fh:
+        test_x = pickle.load(fh)
+
+    anomaly_data_file = os.path.join(
+        DATA_DIR,
+        DIR,
+        'matrix_test_anomalies.pkl'
+    )
+
+    test_id_list_file = os.path.join(
+        DATA_DIR,
+        DIR,
+        'test_idList.pkl'
+    )
+
+    with open(anomaly_data_file, 'rb') as fh:
+        anomaly_data = pickle.load(fh)
+
+    with open(test_id_list_file, 'rb') as fh:
+        _id_list = pickle.load(fh)
+        test_anomaly_idList = _id_list[0]
+        test_normal_idList = _id_list[1]
+
+    test_pos = [test_normal_idList, test_x]
+    test_anomaly = [test_anomaly_idList, anomaly_data]
+    return train_x_pos, train_x_neg, test_pos, test_anomaly , domain_dims
