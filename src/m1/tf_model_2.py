@@ -482,8 +482,8 @@ class model:
             ad_n = self.calculate_angular_sim(emb_op_n)
             print(ad_n.shape)
             ad_n = tf.add(
-                ad_n,
-                -and_dist_pos
+                -ad_n,
+                and_dist_pos
             )
             ang_dist_neg.append(ad_n)
 
