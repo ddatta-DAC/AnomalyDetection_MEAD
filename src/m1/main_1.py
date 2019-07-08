@@ -41,9 +41,9 @@ except:
     from .src.m1 import tf_model_2 as tf_model
 
 try:
-    from src.Eval import eval_v1 as evaluation_v1
+    from src.Eval import eval_v1 as eval
 except:
-    from .src.Eval import eval_v1 as evaluation_v1
+    from .src.Eval import eval_v1 as eval
 
 try:
     from src.m1 import isolation_forest as IF
@@ -124,7 +124,7 @@ def setup_general_config():
         os.mkdir(os.path.join(SAVE_DIR))
 
     handler = logging.handlers.WatchedFileHandler(
-        os.environ.get("LOGFILE", os.path.join(OP_DIR, 'ape.log')))
+        os.environ.get("LOGFILE", os.path.join(OP_DIR, 'm1.log')))
     formatter = logging.Formatter(logging.BASIC_FORMAT)
     handler.setFormatter(formatter)
     root = logging.getLogger()
@@ -164,8 +164,10 @@ def set_up_model(config, _dir):
         emb_dims=embedding_dims,
         batch_size=config[_dir]['batchsize'],
         num_epochs=config[_dir]['num_epochs'],
-        learning_rate=LR
+        learning_rate=LR,
+        num_neg_samples= config[_dir]['num_neg_samples']
     )
+
     model_obj.inference = False
     model_obj.build_model()
     return model_obj
@@ -181,8 +183,11 @@ def process(
         domain_dims
 
 ):
+    num_neg_samples = train_x_neg.shape[1]
+    CONFIG[_DIR]['num_neg_samples'] = num_neg_samples
     model_obj = set_up_model(CONFIG, _DIR)
     _use_pretrained = CONFIG[_DIR]['use_pretrained']
+
 
     if _use_pretrained is True:
         saved_file_path = None
@@ -197,10 +202,87 @@ def process(
         if saved_file_path is not None:
             model_obj.set_pretrained_model_file(saved_file_path)
         else:
-            model_obj.train_model(train_x_pos, train_x_neg)
+            model_obj.train_model(
+                train_x_pos,
+                train_x_neg
+            )
 
     elif _use_pretrained is False:
-        model_obj.train_model(train_x_pos, train_x_neg)
+        model_obj.train_model(
+            train_x_pos,
+            train_x_neg
+        )
+
+    test_normal_ids = test_pos[0]
+    test_anomaly_ids = test_anomaly[0][:2000]
+    test_ids = list(np.hstack(
+        [test_normal_ids,
+         test_anomaly_ids]
+    ))
+    print(' Len of test_ids ', len(test_ids))
+    test_normal_data = test_pos[1]
+    test_anomaly_data = test_anomaly[1][:2000]
+    test_data_x = np.vstack([
+        test_normal_data,
+        test_anomaly_data
+    ])
+
+
+
+    print('Length of test data', test_data_x.shape)
+    res = model_obj.get_event_score(test_data_x)
+    print('Length of results ', len(res))
+
+
+    test_ids = list(test_ids)
+
+    bounds = []
+    training_pos_scores = model_obj.get_event_score(
+        train_x_pos
+    )
+    training_pos_scores = [_[0] for _ in training_pos_scores]
+
+    train_noise = np.reshape(train_x_neg, [-1, train_x_pos.shape[-1]])
+    training_noise_scores = model_obj.get_event_score(
+        train_noise
+    )
+    training_noise_scores = [_[0] for _ in training_noise_scores]
+
+    bounds.append(min(training_noise_scores))
+    bounds.append(max(training_pos_scores))
+
+    print('Length of results ', len(res))
+
+    res = list(res)
+    _id_score_dict = {
+        id: _res for id, _res in zip(test_ids, res)
+    }
+
+    '''
+    sort by ascending 
+    since lower likelihood means anomalous
+    '''
+    tmp = sorted(
+        _id_score_dict.items(),
+        key=operator.itemgetter(1)
+    )
+    sorted_id_score_dict = OrderedDict()
+
+    for e in tmp:
+        sorted_id_score_dict[e[0]] = e[1][0]
+
+    recall, precison = eval.precision_recall_curve(
+        sorted_id_score_dict,
+        anomaly_id_list=test_anomaly_ids,
+        bounds=bounds
+    )
+
+    _auc = auc(recall, precison)
+    logging.info('AUC')
+    logging.info(str(_auc))
+    print('--------------------------')
+
+
 
     return
 
@@ -353,11 +435,12 @@ def main():
     # ------------ #
 
     train_x_pos, train_x_neg, test_pos, test_anomaly , domain_dims  = data_fetcher.get_data_v2(
-        DATA_DIR,
+        CONFIG['DATA_DIR'],
         _DIR
     )
 
-    DOMAIN_DIMS = get_domain_dims()
+
+    DOMAIN_DIMS = domain_dims
     print('Data shape', train_x_pos.shape)
     lof_1.KNN_K = CONFIG[_DIR]['lof_K']
 
@@ -368,7 +451,7 @@ def main():
         train_x_pos,
         train_x_neg,
         test_pos,
-        test_anomaly ,
+        test_anomaly,
         domain_dims
     )
 

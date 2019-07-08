@@ -1,21 +1,22 @@
-'DATA_DIR': '../../data_v1'
-'_DIR' : 'data_2'
+'DATA_DIR': '../../generated_data'
+'_DIR' : 'china_import'
 'OP_DIR' : 'output'
 'SAVE_DIR' : 'save_dir'
 'MODEL_NAME' : 'model_v1_2'
 'eval_type' : 1
 'num_jobs' : 1
-'data_2':
-  'learning_rate' : 0.00005
-  'use_pretrained' : False
+'china_import':
+  'learning_rate' : 0.001
+  'use_pretrained' : True
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
-  'saved_model_file' : 'frozen_model_5_v18_6_1561940134.pb'
+  'saved_model_file' : 'frozen_model_v1_28_10_1562533371.pb'
   'num_epochs' : 30
-  'op_dims' : 8,6
-  'batchsize': 2048
+  'op_dims' : 8,10
+  'batchsize': 128
   'alpha' : 0.01
   'lof_K' : 20
   'w_mean' : True
   'log_file' : 'results_data_2_log.csv'
+  'num_neg_samples' : 3
