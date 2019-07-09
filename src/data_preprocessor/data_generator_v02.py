@@ -199,7 +199,6 @@ def collate(file_list):
     all_cols.extend(feature_cols)
     print(all_cols)
     _master_df = _master_df[all_cols]
-    exit(1)
     return _master_df
 
 
@@ -218,11 +217,11 @@ def remove_low_frequency_values(_df):
         freq_column_value_filters[c] = []
 
         obj_counter = Counter(values)
-        print(values)
-        exit(1)
+
         for _item, _count in obj_counter.items():
             if _count < freq_bound:
                 freq_column_value_filters[c].append(_item)
+
 
     for c, _items in freq_column_value_filters.items():
         print(c, len(_items))
@@ -231,7 +230,7 @@ def remove_low_frequency_values(_df):
         _df = _df.loc[
             (~_df[col].isin(val))
         ]
-    print(len(_df))
+
     return _df
 
 
@@ -865,7 +864,6 @@ def create_negative_samples_v1_aux(
     new_df[ns_id_col] = 0
     for i, row in df_chunk.iterrows():
 
-        Pid_val = row[id_col]
         for _k in range(num_neg_samples_v1):
             _res = get_neg_sample_v1(
                 _k, ref_df, column_valid_values, row, feature_cols_id
