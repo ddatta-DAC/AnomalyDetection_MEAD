@@ -353,9 +353,9 @@ def setup_testing_data(test_df, train_df, col_val2id_dict):
     for _result in results:
         if _result[0] == 1:
             anomalies_df_c1 = _result[1]
-        elif _result[1] == 2:
+        elif _result[0] == 2:
             anomalies_df_c2 = _result[1]
-        elif _result[1] == 3:
+        elif _result[0] == 3:
             anomalies_df_c3 = _result[1]
 
     return new_test_df, anomalies_df_c1, anomalies_df_c2, anomalies_df_c3
