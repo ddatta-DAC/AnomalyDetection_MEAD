@@ -10,8 +10,6 @@ from joblib import Parallel, delayed
 import yaml
 import math
 
-DIR = 'us_import'
-
 
 # # Let us create APE style test & training sets
 # ## us import :  Train on 2015(01-07) Test(08-09)
@@ -69,6 +67,7 @@ column_value_filters = None
 num_neg_samples_v1 = None
 save_dir = None
 
+
 def set_up_config():
     global CONFIG_FILE
     global use_cols
@@ -77,16 +76,19 @@ def set_up_config():
     global DIR
     global save_dir
     global column_value_filters
+    global num_neg_samples_v1
 
     with open(CONFIG_FILE) as f:
         CONFIG = yaml.safe_load(f)
 
+    DIR = CONFIG['_DIR']
     save_dir = os.path.join(
         CONFIG['save_dir'],
         DIR
     )
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
 
-    DIR = CONFIG['_DIR']
     use_cols = CONFIG[DIR]['use_cols']
     freq_bound = CONFIG[DIR]['low_freq_bound']
     num_neg_samples_ape = CONFIG[DIR]['num_neg_samples_ape']
@@ -228,7 +230,6 @@ def remove_low_frequency_values(_df):
             if _count < freq_bound:
                 freq_column_value_filters[c].append(_item)
 
-
     for c, _items in freq_column_value_filters.items():
         print(c, len(_items))
     print(len(_df))
@@ -300,7 +301,7 @@ def create_anomalies(test_df, train_df, col_val2id_dict, c=3):
     # sample c cols
     new_df = new_df.drop_duplicates(subset=feature_cols)
     print(' Length of anomalies_df ', new_df)
-    return (c, new_df )
+    return (c, new_df)
 
 
 def setup_testing_data(test_df, train_df, col_val2id_dict):
@@ -338,7 +339,7 @@ def setup_testing_data(test_df, train_df, col_val2id_dict):
     for i, row in test_df.iterrows():
         if validate(row, train_df):
             new_test_df = new_test_df.append(row, ignore_index=True)
-            print(len(new_test_df))
+
     print(' After deduplication :: ', len(new_test_df))
 
     results = Parallel(n_jobs=3)(
@@ -376,7 +377,6 @@ def create_train_test_sets():
     print(' Train initial ', len(train_master_df))
     print(' Test initial ', len(test_master_df))
 
-
     '''
     test data preprocessing
     '''
@@ -385,10 +385,11 @@ def create_train_test_sets():
     '''
     Remove values that are garbage
     '''
-    for col, val in column_value_filters.items():
-        train_master_df = train_master_df.loc[
-            (~train_master_df[col].isin(val))
-        ]
+    if type(column_value_filters) != bool:
+        for col, val in column_value_filters.items():
+            train_master_df = train_master_df.loc[
+                (~train_master_df[col].isin(val))
+            ]
 
     print(' Length of training data ', len(train_master_df))
 
@@ -498,7 +499,6 @@ def create_negative_samples_ape():
 
     num_chunks = 25
 
-
     train_data_file = os.path.join(save_dir, 'train_data.csv')
 
     train_df = pd.read_csv(
@@ -528,7 +528,7 @@ def create_negative_samples_ape():
     with open(os.path.join(save_dir, 'domain_dims.pkl'), 'rb') as fh:
         domain_dims = pickle.load(fh)
 
-    print(' domain dimensions ', domain_dims)
+    print(' domain dimensions :: ', domain_dims)
 
     # This id for the 4th term
     P_A = {}
@@ -597,7 +597,6 @@ def create_ape_model_data():
     global id_col
     global ns_id_col
     global num_neg_samples_ape
-
 
     train_pos_data_file = os.path.join(save_dir, 'train_data.csv')
     train_neg_data_file = os.path.join(save_dir, 'negative_samples_ape_1.csv')
@@ -815,7 +814,6 @@ def get_neg_sample_v1(
 
     # iterate while a real noise is not generated
     while True:
-
         target_cols = [feature_cols_id[_]
                        for _ in random.sample(
                 list(feature_cols_id.keys()),
@@ -848,8 +846,8 @@ def create_negative_samples_v1_aux(
     global ns_id_col
     global id_col
     global num_neg_samples_v1
-    ns_id_col = 'NegSampleID'
 
+    ns_id_col = 'NegSampleID'
     feature_cols_id = {
         e[0]: e[1]
         for e in enumerate(feature_cols)
@@ -886,9 +884,9 @@ def create_negative_samples_v1():
     global save_dir
     global id_col
     global ns_id_col
+    global num_neg_samples_v1
 
-
-
+    num_chunks = 25
     train_data_file = os.path.join(save_dir, 'train_data.csv')
 
     train_df = pd.read_csv(
@@ -903,6 +901,7 @@ def create_negative_samples_v1():
     m randomly between (1, d/2)
     Validate if generated negative sample is not part of the test or training set
     '''
+
     ref_df = pd.DataFrame(
         train_df,
         copy=True
@@ -926,7 +925,6 @@ def create_negative_samples_v1():
     for _fc_name in feature_cols:
         column_valid_values[_fc_name] = list(set(list(ref_df[_fc_name])))
 
-    num_chunks = 10
     chunk_len = int(len(train_df) / (num_chunks - 1))
 
     list_df_chunks = np.split(
@@ -984,7 +982,6 @@ def create_model_data_v1():
     global id_col
     global ns_id_col
     global num_neg_samples_v1
-
 
     train_pos_data_file = os.path.join(save_dir, 'train_data.csv')
     train_neg_data_file = os.path.join(save_dir, 'negative_samples_v1.csv')
