@@ -67,7 +67,7 @@ use_cols = None
 freq_bound = None
 column_value_filters = None
 num_neg_samples_v1 = None
-
+save_dir = None
 
 def set_up_config():
     global CONFIG_FILE
@@ -75,10 +75,16 @@ def set_up_config():
     global freq_bound
     global num_neg_samples_ape
     global DIR
-
+    global save_dir
     global column_value_filters
+
     with open(CONFIG_FILE) as f:
         CONFIG = yaml.safe_load(f)
+
+    save_dir = os.path.join(
+        CONFIG['save_dir'],
+        DIR
+    )
 
     DIR = CONFIG['_DIR']
     use_cols = CONFIG[DIR]['use_cols']
@@ -362,7 +368,7 @@ def create_train_test_sets():
     global column_value_filters
     train_files = get_files('train')
     test_files = get_files('test')
-
+    global save_dir
     # combine train_data :
     train_master_df = collate(train_files)
     test_master_df = collate(test_files)
@@ -370,7 +376,6 @@ def create_train_test_sets():
     print(' Train initial ', len(train_master_df))
     print(' Test initial ', len(test_master_df))
 
-    save_dir = os.path.join('./../generated_data', DIR)
 
     '''
     test data preprocessing
@@ -493,10 +498,6 @@ def create_negative_samples_ape():
 
     num_chunks = 25
 
-    save_dir = os.path.join(
-        './../generated_data',
-        DIR
-    )
 
     train_data_file = os.path.join(save_dir, 'train_data.csv')
 
@@ -596,10 +597,7 @@ def create_ape_model_data():
     global id_col
     global ns_id_col
     global num_neg_samples_ape
-    save_dir = os.path.join(
-        './../generated_data',
-        DIR
-    )
+
 
     train_pos_data_file = os.path.join(save_dir, 'train_data.csv')
     train_neg_data_file = os.path.join(save_dir, 'negative_samples_ape_1.csv')
@@ -889,10 +887,7 @@ def create_negative_samples_v1():
     global id_col
     global ns_id_col
 
-    save_dir = os.path.join(
-        './../generated_data',
-        DIR
-    )
+
 
     train_data_file = os.path.join(save_dir, 'train_data.csv')
 
@@ -989,10 +984,7 @@ def create_model_data_v1():
     global id_col
     global ns_id_col
     global num_neg_samples_v1
-    save_dir = os.path.join(
-        './../generated_data',
-        DIR
-    )
+
 
     train_pos_data_file = os.path.join(save_dir, 'train_data.csv')
     train_neg_data_file = os.path.join(save_dir, 'negative_samples_v1.csv')
