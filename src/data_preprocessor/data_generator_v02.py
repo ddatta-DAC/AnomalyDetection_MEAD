@@ -1054,10 +1054,8 @@ def main():
     create_train_test_sets()
     create_negative_samples_ape()
     create_ape_model_data()
-    create_model_data_v1()
     create_negative_samples_v1()
     create_model_data_v1()
     return
-
 
 main()
