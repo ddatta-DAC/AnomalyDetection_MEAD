@@ -172,7 +172,8 @@ def get_data_v2(
 
 def get_data_v3(
         DATA_DIR,
-        DIR
+        DIR,
+        c = 3
 ):
     with open(os.path.join(
             DATA_DIR,
@@ -199,6 +200,7 @@ def get_data_v3(
 
     with open(train_x_neg_file, 'rb') as fh:
         train_x_neg = pickle.load(fh)
+        train_x_neg = train_x_neg
 
     test_x_file = os.path.join(
         DATA_DIR,
@@ -209,16 +211,18 @@ def get_data_v3(
     with open(test_x_file, 'rb') as fh:
         test_x = pickle.load(fh)
 
+    anomaly_data_file_f_name = 'matrix_test_anomalies_c' + str(c) + '.pkl'
     anomaly_data_file = os.path.join(
         DATA_DIR,
         DIR,
-        'matrix_test_anomalies.pkl'
+        anomaly_data_file_f_name
     )
 
+    test_id_list_f_name = 'test_idList_c' + str(c) + '.pkl'
     test_id_list_file = os.path.join(
         DATA_DIR,
         DIR,
-        'test_idList.pkl'
+        test_id_list_f_name
     )
 
     with open(anomaly_data_file, 'rb') as fh:
