@@ -1,5 +1,5 @@
 'DATA_DIR': '../../generated_data'
-'_DIR' : 'us_import'
+'_DIR' : 'peru_export'
 'OP_DIR' : 'output'
 'SAVE_DIR' : 'save_dir'
 'MODEL_NAME' : 'model_v1_2'
@@ -23,7 +23,7 @@
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
-  'saved_model_file' : 'frozen_model_v1_28_8_1562618642.pb'
+  'saved_model_file' : 'frozen_model_v1_28_8_1562854829.pb'
   'num_epochs' : 25
   'op_dims' : 8,8
   'batchsize': 128

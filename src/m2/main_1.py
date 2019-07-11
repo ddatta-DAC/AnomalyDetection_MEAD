@@ -1,8 +1,3 @@
-# --------------------------------- #
-# Calculate  record embeddings based on Arora Paper
-# --------------------------------- #
-# this is to verify for both sets
-# ----------------------------------- #
 
 import operator
 import pickle
@@ -391,7 +386,7 @@ def main():
     global CONFIG_FILE
     global MODEL_NAME
     global DOMAIN_DIMS
-
+    global logger
     time_1 = time.time()
     with open(CONFIG_FILE) as f:
         CONFIG = yaml.safe_load(f)
@@ -407,7 +402,8 @@ def main():
 
     train_x_pos, train_x_neg, test_pos, test_anomaly , domain_dims  = data_fetcher.get_data_v3(
         CONFIG['DATA_DIR'],
-        _DIR
+        _DIR,
+        c=2
     )
 
 

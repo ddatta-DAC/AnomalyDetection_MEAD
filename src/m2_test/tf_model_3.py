@@ -23,8 +23,10 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.utils.extmath import randomized_svd
 import yaml
 from tensorflow.contrib.tensorboard.plugins import projector
-tf.random.set_random_seed(729)
-
+try:
+    tf.random.set_random_seed(729)
+except:
+    tf.set_random_seed(729)
 class model:
     def __init__(self, MODEL_NAME, SAVE_DIR, OP_DIR):
 
@@ -416,7 +418,7 @@ class model:
             )
 
             self.gradients = gvs
-            tf.summary.all_v2_summary_ops()
+            # tf.summary.all_v2_summary_ops()
             capped_gvs = [
                 (tf.clip_by_value(grad, -1.0, 1.0), var)
                 for grad, var in gvs if grad is not None
@@ -492,7 +494,7 @@ class model:
             r_b_neg.append(r_b)
 
             ad_n = self.calculate_angular_sim(emb_op_n)
-            print(ad_n.shape)
+            # print(ad_n.shape)
             ad_n = tf.add(
                 and_dist_pos,
                 - ad_n
@@ -621,9 +623,9 @@ class model:
                 batch_loss = np.mean(loss)
                 losses.append(batch_loss)
 
-                if _b % 100 == 0 :
-                    print(' batch ::', _b)
-                    print(batch_loss)
+                # if _b % 1000 == 0 :
+                #     print(' batch ::', _b)
+                #     print(batch_loss)
 
                 summary_writer.add_summary(summary, step)
                 step += 1

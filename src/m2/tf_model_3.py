@@ -23,7 +23,7 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.utils.extmath import randomized_svd
 import yaml
 from tensorflow.contrib.tensorboard.plugins import projector
-
+tf.random.set_random_seed(729)
 
 class model:
     def __init__(self, MODEL_NAME, SAVE_DIR, OP_DIR):

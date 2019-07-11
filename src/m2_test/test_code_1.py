@@ -175,8 +175,7 @@ def process(
         _DIR,
         train_x_pos,
         train_x_neg,
-        test_pos,
-        test_anomaly,
+        testing_dict,
         ablation_flag
 ):
     global logger
@@ -211,75 +210,81 @@ def process(
             train_x_neg
         )
 
-    test_normal_ids = test_pos[0]
-    test_anomaly_ids = test_anomaly[0]
-    test_ids = list(np.hstack(
-        [test_normal_ids,
-         test_anomaly_ids]
-    ))
 
-    print(' Len of test_ids ', len(test_ids))
-    test_normal_data = test_pos[1]
-    test_anomaly_data = test_anomaly[1]
-    test_data_x = np.vstack([
-        test_normal_data,
-        test_anomaly_data
-    ])
+    # 3 test cases by value of c
+    for _c, test_data_item in testing_dict.items():
+        logger.info(' >> c = ' + str(_c))
+        test_pos = test_data_item[0]
+        test_anomaly = test_data_item[0]
+
+        test_normal_ids = test_pos[0]
+        test_anomaly_ids = test_anomaly[0]
+        test_ids = list(np.hstack(
+            [test_normal_ids,
+             test_anomaly_ids]
+        ))
+
+        print(' Len of test_ids ', len(test_ids))
+        test_normal_data = test_pos[1]
+        test_anomaly_data = test_anomaly[1]
+        test_data_x = np.vstack([
+            test_normal_data,
+            test_anomaly_data
+        ])
+
+        print('Length of test data', test_data_x.shape)
+        res = model_obj.get_event_score(test_data_x)
+        print('Length of results ', len(res))
 
 
-    print('Length of test data', test_data_x.shape)
-    res = model_obj.get_event_score(test_data_x)
-    print('Length of results ', len(res))
+        test_ids = list(test_ids)
 
+        bounds = []
+        training_pos_scores = model_obj.get_event_score(
+            train_x_pos
+        )
+        training_pos_scores = [_[0] for _ in training_pos_scores]
 
-    test_ids = list(test_ids)
+        train_noise = np.reshape(train_x_neg, [-1, train_x_pos.shape[-1]])
+        training_noise_scores = model_obj.get_event_score(
+            train_noise
+        )
+        training_noise_scores = [_[0] for _ in training_noise_scores]
 
-    bounds = []
-    training_pos_scores = model_obj.get_event_score(
-        train_x_pos
-    )
-    training_pos_scores = [_[0] for _ in training_pos_scores]
+        bounds.append(min(training_noise_scores))
+        bounds.append(max(training_pos_scores))
 
-    train_noise = np.reshape(train_x_neg, [-1, train_x_pos.shape[-1]])
-    training_noise_scores = model_obj.get_event_score(
-        train_noise
-    )
-    training_noise_scores = [_[0] for _ in training_noise_scores]
+        print('Length of results ', len(res))
 
-    bounds.append(min(training_noise_scores))
-    bounds.append(max(training_pos_scores))
+        res = list(res)
+        _id_score_dict = {
+            id: _res for id, _res in zip(test_ids, res)
+        }
 
-    print('Length of results ', len(res))
+        '''
+        sort by ascending 
+        since lower likelihood means anomalous
+        '''
+        tmp = sorted(
+            _id_score_dict.items(),
+            key=operator.itemgetter(1)
+        )
+        sorted_id_score_dict = OrderedDict()
 
-    res = list(res)
-    _id_score_dict = {
-        id: _res for id, _res in zip(test_ids, res)
-    }
+        for e in tmp:
+            sorted_id_score_dict[e[0]] = e[1][0]
 
-    '''
-    sort by ascending 
-    since lower likelihood means anomalous
-    '''
-    tmp = sorted(
-        _id_score_dict.items(),
-        key=operator.itemgetter(1)
-    )
-    sorted_id_score_dict = OrderedDict()
+        recall, precison = eval.precision_recall_curve(
+            sorted_id_score_dict,
+            anomaly_id_list=test_anomaly_ids,
+            bounds=bounds
+        )
 
-    for e in tmp:
-        sorted_id_score_dict[e[0]] = e[1][0]
+        _auc = auc(recall, precison)
+        logger.info('AUC')
+        logger.info(str(_auc))
 
-    recall, precison = eval.precision_recall_curve(
-        sorted_id_score_dict,
-        anomaly_id_list=test_anomaly_ids,
-        bounds=bounds
-    )
-
-    _auc = auc(recall, precison)
-    logger.info('AUC')
-    logger.info(str(_auc))
-
-    print('--------------------------')
+        print('--------------------------')
 
 
 
@@ -316,29 +321,36 @@ def main( exec_dir = None, ablation_flag = False ):
     logger.info(' Ablation ')
     logger.info(ablation_flag)
 
+    train_x_pos, train_x_neg, _, _, domain_dims = data_fetcher.get_data_v3(
+        CONFIG['DATA_DIR'],
+        _DIR,
+        c=1
+    )
+
+    testing_dict = {}
+
     for _c in range(1,3+1) :
-        logger.info(' >> c = ' + str(_c))
-        train_x_pos, train_x_neg, test_pos, test_anomaly , domain_dims = data_fetcher.get_data_v3(
+
+        _, _, test_pos, test_anomaly , domain_dims = data_fetcher.get_data_v3(
             CONFIG['DATA_DIR'],
             _DIR,
             c=_c
         )
+        testing_dict[_c] = [test_pos, test_anomaly]
 
-        DOMAIN_DIMS = domain_dims
-        print('Data shape', train_x_pos.shape)
+    print('Data shape', train_x_pos.shape)
 
-        time_1 = time.time()
-        process(
-            CONFIG,
-            _DIR,
-            train_x_pos,
-            train_x_neg,
-            test_pos,
-            test_anomaly,
-            ablation_flag
-        )
+    time_1 = time.time()
+    process(
+        CONFIG,
+        _DIR,
+        train_x_pos,
+        train_x_neg,
+        testing_dict,
+        ablation_flag
+    )
 
-        time_2 = time.time()
+    time_2 = time.time()
     logger.info('-------------------')
     print('time taken ', time_2 - time_1)
 
