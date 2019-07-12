@@ -8,6 +8,7 @@
 import operator
 import pickle
 import sys
+import argparse
 import tensorflow as tf
 tf.logging.set_verbosity(tf.logging.ERROR)
 import numpy as np
@@ -28,20 +29,21 @@ from sklearn.metrics import auc
 import glob
 import logging
 import logging.handlers
+tf.set_random_seed(729)
 
 _TIME_IT = False
 
 sys.path.append('./..')
 sys.path.append('./../../.')
 try:
-    from .src.Eval import eval_v1 as eval
-except:
     from src.Eval import eval_v1 as eval
+except:
+    from .src.Eval import eval_v1 as eval
 
 try:
     from src.ape import tf_model_ape_1
 except:
-    from .src.ape import tf_model_ape_1
+    import tf_model_ape_1
 
 try:
     from src.data_fetcher import data_fetcher
@@ -115,7 +117,8 @@ def setup():
     global cur_path
     global logger
     SAVE_DIR = config['SAVE_DIR']
-    _DIR = config['_DIR']
+    if _DIR is None:
+        _DIR = config['_DIR']
     OP_DIR = config['OP_DIR']
     DATA_DIR = config['DATA_DIR']
     if not os.path.exists(SAVE_DIR):
@@ -219,112 +222,132 @@ def main():
             APE_term_4
         )
 
-    '''
-    join the normal data + anomaly data
-    join the normal data id +  anomaly data id 
-    Maintain order
-    '''
-
-    test_normal_ids = test_pos[0]
-    test_anomaly_ids = test_anomaly[0]
-    test_ids = list(np.hstack(
-        [test_normal_ids,
-         test_anomaly_ids]
-    ))
-    print (' Len of test_ids ', len(test_ids))
-    test_normal_data = test_pos[1]
-    test_anomaly_data = test_anomaly[1]
-    test_data_x = np.vstack([
-        test_normal_data,
-        test_anomaly_data
-    ])
-
-    # ---------- #
-    bounds = []
-    training_pos_scores = model_obj.inference(
-        train_x_pos
-    )
-    training_pos_scores = [_[0] for _ in training_pos_scores]
-
-    train_noise = np.reshape(train_x_neg,[-1,train_x_pos.shape[-1]])
-    training_noise_scores = model_obj.inference(
-        train_noise
-    )
-    training_noise_scores = [_[0] for _ in training_noise_scores]
-
-    bounds.append(min(training_noise_scores))
-    bounds.append(max(training_pos_scores))
-    # ---------- #
-
-    print('Length of test data',test_data_x.shape)
-    res = model_obj.inference(
-        test_data_x
-    )
-
-    test_ids = list(test_ids)
-    print('Length of results ', len(res))
 
 
-    res = list(res)
-    _id_score_dict = {
-        id: _res for id, _res in zip(test_ids, res)
-    }
+    # test for c = 1, 2, 3
 
-    '''
-    sort by ascending 
-    since lower likelihood means anomalous
-    '''
-    tmp = sorted(
-        _id_score_dict.items(),
-        key=operator.itemgetter(1)
-    )
-    sorted_id_score_dict = OrderedDict()
+    for c in range(1,3+1):
+        _, _, _, _, test_pos, test_anomaly, _ = data_fetcher.get_data_v1(
+            DATA_DIR,
+            _DIR,
+            c = c
+        )
 
-    for e in tmp:
-        sorted_id_score_dict[e[0]] = e[1][0]
+        '''
+        join the normal data + anomaly data
+        join the normal data id +  anomaly data id 
+        Maintain order
+        '''
+
+        test_normal_ids = test_pos[0]
+        test_anomaly_ids = test_anomaly[0]
+        test_ids = list(np.hstack(
+            [test_normal_ids,
+             test_anomaly_ids]
+        ))
+        print (' Len of test_ids ', len(test_ids))
+        test_normal_data = test_pos[1]
+        test_anomaly_data = test_anomaly[1]
+        test_data_x = np.vstack([
+            test_normal_data,
+            test_anomaly_data
+        ])
+
+        # ---------- #
+        bounds = []
+        training_pos_scores = model_obj.inference(
+            train_x_pos
+        )
+        training_pos_scores = [_[0] for _ in training_pos_scores]
+
+        train_noise = np.reshape(train_x_neg,[-1,train_x_pos.shape[-1]])
+        training_noise_scores = model_obj.inference(
+            train_noise
+        )
+        training_noise_scores = [_[0] for _ in training_noise_scores]
+
+        bounds.append(min(training_noise_scores))
+        bounds.append(max(training_pos_scores))
+        # ---------- #
+
+        print('Length of test data',test_data_x.shape)
+        res = model_obj.inference(
+            test_data_x
+        )
+
+        test_ids = list(test_ids)
+        print('Length of results ', len(res))
+
+
+        res = list(res)
+        _id_score_dict = {
+            id: _res for id, _res in zip(test_ids, res)
+        }
+
+        '''
+        sort by ascending 
+        since lower likelihood means anomalous
+        '''
+        tmp = sorted(
+            _id_score_dict.items(),
+            key=operator.itemgetter(1)
+        )
+        sorted_id_score_dict = OrderedDict()
+
+        for e in tmp:
+            sorted_id_score_dict[e[0]] = e[1][0]
 
 
 
-    recall, precison = eval.precision_recall_curve(
-        sorted_id_score_dict,
-        anomaly_id_list=test_anomaly_ids,
-        bounds = bounds
-    )
+        recall, precison = eval.precision_recall_curve(
+            sorted_id_score_dict,
+            anomaly_id_list=test_anomaly_ids,
+            bounds = bounds
+        )
 
-    _auc = auc(recall, precison)
-    logger.info('AUC')
-    logger.info(str(_auc))
-
-    print('--------------------------')
-
-    '''
-        if _TIME_IT == False:
-    
         _auc = auc(recall, precison)
-        print('AUC', _auc)
-        plt.figure(figsize=[14, 8])
-        plt.plot(
-            recall,
-            precison,
-            color='blue', linewidth=1.75)
+        logger.info('c=' + str(c))
+        logger.info('AUC')
+        logger.info(str(_auc))
 
-        plt.xlabel('Recall', fontsize=15)
-        plt.ylabel('Precision', fontsize=15)
-        plt.title('Recall | AUC ' + str(_auc), fontsize=15)
-        f_name = 'precison-recall_1_test_' + str(i) + '.png'
-        f_path = os.path.join(OP_DIR, f_name)
 
-        # plt.savefig(f_path)
-        test_result_r.append(recall)
-        test_result_p.append(precison)
-        plt.close()
-    '''
-    print('----------------------------')
+        '''
+            if _TIME_IT == False:
+        
+            _auc = auc(recall, precison)
+            print('AUC', _auc)
+            plt.figure(figsize=[14, 8])
+            plt.plot(
+                recall,
+                precison,
+                color='blue', linewidth=1.75)
+    
+            plt.xlabel('Recall', fontsize=15)
+            plt.ylabel('Precision', fontsize=15)
+            plt.title('Recall | AUC ' + str(_auc), fontsize=15)
+            f_name = 'precison-recall_1_test_' + str(i) + '.png'
+            f_path = os.path.join(OP_DIR, f_name)
+    
+            # plt.savefig(f_path)
+            test_result_r.append(recall)
+            test_result_p.append(precison)
+            plt.close()
+        '''
 
-    end_time = time.time()
-    elapsed_time = (end_time - start_time)
-    logging.info('time taken')
-    logging.info(str(elapsed_time))
+        print('----------------------------')
 
+        end_time = time.time()
+        elapsed_time = (end_time - start_time)
+        logging.info('time taken')
+        logging.info(str(elapsed_time))
+
+
+parser = argparse.ArgumentParser(description='APE on wwf data')
+parser.add_argument('-d','--dir', help='Which data to run. give dir name [ us_import, peru_export, china_export ]', required=True)
+args = vars(parser.parse_args())
+
+if 'dir' in args.keys() :
+    print(' >>> ', args['dir'])
+    _DIR = args['dir']
 
 main()

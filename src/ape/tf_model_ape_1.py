@@ -14,6 +14,7 @@ import time
 from collections import OrderedDict
 import seaborn as sns
 import glob
+tf.set_random_seed(729)
 
 OP_DIR = None
 _DIR = None
