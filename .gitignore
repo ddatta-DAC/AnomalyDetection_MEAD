@@ -4,3 +4,5 @@ generated_data/**
 *events.out.tfevents.*.*gi
 __pycache__/
 /src/**/summary
+wwf_data_v1
+**/.ipynb_checkpoints/**
