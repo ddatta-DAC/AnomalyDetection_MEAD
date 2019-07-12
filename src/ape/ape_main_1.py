@@ -348,6 +348,6 @@ args = vars(parser.parse_args())
 
 if 'dir' in args.keys() :
     print(' >>> ', args['dir'])
-    _DIR = args['dir']
+    _DIR = str(args['dir']).strip("'")
 
 main()
