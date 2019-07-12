@@ -23,7 +23,7 @@
   'use_bias' : True
   'saved_model_file' : 'frozen_model_v1_28_8_1562854829.pb'
   'num_epochs' : 25
-  'op_dims' : 8,10
+  'op_dims' : 8,8
   'batchsize': 64
   'num_neg_samples' : 15
 'us_import':

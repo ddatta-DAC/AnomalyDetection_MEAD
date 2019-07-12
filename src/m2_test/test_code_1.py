@@ -89,14 +89,9 @@ def setup_general_config():
     global logger
     SAVE_DIR = os.path.join(CONFIG['SAVE_DIR'], _DIR)
     OP_DIR = os.path.join(CONFIG['OP_DIR'], _DIR)
-    print(cur_path)
-    print(OP_DIR)
 
-    if not os.path.exists(CONFIG['OP_DIR']):
-        os.mkdir(CONFIG['OP_DIR'])
 
-    if not os.path.exists(OP_DIR):
-        os.mkdir(OP_DIR)
+
 
     if not os.path.exists(CONFIG['SAVE_DIR']):
         os.mkdir(os.path.join(CONFIG['SAVE_DIR']))
@@ -104,18 +99,9 @@ def setup_general_config():
     if not os.path.exists(SAVE_DIR):
         os.mkdir(os.path.join(SAVE_DIR))
 
-    logger = logging.getLogger('main')
-    logger.setLevel(logging.INFO)
-    try:
-        log_file = CONFIG['log_file']
-    except:
-        log_file = 'm1.log'
-    handler = logging.FileHandler(os.path.join(OP_DIR,log_file))
-    handler.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    logger.info(' Info start ')
 
-    logger.info(pprint.pformat(CONFIG[_DIR], indent=4))
+
+    # logger.info(pprint.pformat(CONFIG[_DIR], indent=4))
     return
 
 
@@ -213,9 +199,11 @@ def process(
 
     # 3 test cases by value of c
     for _c, test_data_item in testing_dict.items():
+        print('----->', _c)
+
         logger.info(' >> c = ' + str(_c))
         test_pos = test_data_item[0]
-        test_anomaly = test_data_item[0]
+        test_anomaly = test_data_item[1]
 
         test_normal_ids = test_pos[0]
         test_anomaly_ids = test_anomaly[0]
@@ -289,7 +277,10 @@ def process(
 
 
 
-def main( exec_dir = None, ablation_flag = False ):
+def main(
+        exec_dir = None,
+        ablation_flag = False
+):
     global embedding_dims
     global SAVE_DIR
     global _DIR
@@ -300,14 +291,7 @@ def main( exec_dir = None, ablation_flag = False ):
     global DOMAIN_DIMS
     global logger
 
-    time_1 = time.time()
-    with open(CONFIG_FILE) as f:
-        CONFIG = yaml.safe_load(f)
-
-    if exec_dir is None:
-        _DIR = CONFIG['_DIR']
-    else:
-        _DIR = exec_dir
+    _DIR = exec_dir
 
     DATA_DIR = os.path.join(CONFIG['DATA_DIR'], _DIR)
     setup_general_config()
@@ -330,15 +314,15 @@ def main( exec_dir = None, ablation_flag = False ):
     testing_dict = {}
 
     for _c in range(1,3+1) :
-
-        _, _, test_pos, test_anomaly , domain_dims = data_fetcher.get_data_v3(
+        _, _ , test_pos, test_anomaly , _ = data_fetcher.get_data_v3(
             CONFIG['DATA_DIR'],
             _DIR,
             c=_c
         )
         testing_dict[_c] = [test_pos, test_anomaly]
 
-    print('Data shape', train_x_pos.shape)
+    print('Data pos shape', train_x_pos.shape)
+    print('Data neg shape', train_x_neg.shape)
 
     time_1 = time.time()
     process(
@@ -359,6 +343,33 @@ def main( exec_dir = None, ablation_flag = False ):
 # find out which model works best
 # ----------------------------------------------------------------- #
 
-for _exec_dir in ['china_import','peru_export','us_import'] :
+
+with open(CONFIG_FILE) as f:
+    CONFIG = yaml.safe_load(f)
+
+try:
+    log_file = CONFIG['log_file']
+except:
+    log_file = 'm1.log'
+
+
+for _exec_dir in ['peru_export', 'china_import', 'us_import'] :
+
+    _DIR = _exec_dir
+    logger = logging.getLogger('main')
+    logger.setLevel(logging.INFO)
+    OP_DIR = os.path.join(CONFIG['OP_DIR'], _DIR)
+
+    if not os.path.exists(CONFIG['OP_DIR']):
+        os.mkdir(CONFIG['OP_DIR'])
+
+    if not os.path.exists(OP_DIR):
+        os.mkdir(OP_DIR)
+
+    handler = logging.FileHandler(os.path.join(OP_DIR, log_file))
+    handler.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    logger.info(' Info start ')
+
     for _ablation_flag in [True, False] :
         main(_exec_dir , _ablation_flag )
