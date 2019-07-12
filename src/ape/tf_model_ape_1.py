@@ -380,7 +380,8 @@ class model_ape_1:
                     z = tf.reduce_sum(
                         _z1,
                         axis=-1,
-                        keepdims=True) * tf.sqrt(tf.square(self.W_ij[i][j]))
+                        keepdims=True)
+                    z = z * tf.square(self.W_ij[i][j])
                     neg_pair_dp.append(z)
             print(neg_pair_dp)
 
