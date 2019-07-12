@@ -346,10 +346,14 @@ class model_ape_1:
             for i in range(self.num_entities):
                 for j in range(i + 1, self.num_entities):
                     z = tf.reduce_sum(
-                        tf.multiply(x_pos_WXb[l][i],
-                                    x_pos_WXb[l][j]),
+                        tf.multiply(
+                            x_pos_WXb[l][i],
+                            x_pos_WXb[l][j]
+                        ),
                         axis=1,
-                        keepdims=True) * tf.sqrt(tf.square(self.W_ij[i][j]))
+                        keepdims=True
+                    )
+                    z = z * tf.square(self.W_ij[i][j])
                     _sum += z
                     print(z)
             P_e = tf.exp(_sum + self.c)  # 1st term in the loss equation
