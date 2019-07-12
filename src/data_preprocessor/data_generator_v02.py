@@ -423,15 +423,16 @@ def get_neg_sample_ape(_k, column_id, column_name, ref_df, column_valid_values, 
     global term_4_col
     global term_2_col
 
-    new_row = pd.Series(orig_row, copy=True)
+
     Pid_val = orig_row[id_col]
     while True:
+        new_row = pd.Series(orig_row, copy=True)
         _random = random.sample(
             column_valid_values[column_name], 1
         )[0]
         new_row[column_name] = _random
         if validate(new_row, ref_df):
-            new_row = pd.Series(orig_row, copy=True)
+
             new_row[ns_id_col] = int('10' + str(_k) + str(column_id) + str(Pid_val) + '01')
             new_row[term_4_col] = np.log(P_A[column_id][_random])
             _tmp = 0
