@@ -33,7 +33,6 @@ class model_ape_1:
         self.num_layers = len(emb_dims)
         self.use_bias = use_bias
         self.epsilon = 0.000001
-
         self.emb_str = '_'.join([str(_) for _ in self.emb_dims])
         f_name = self.model_name + '_' + self.emb_str + '_k_' + str(self.neg_samples) + "_frozen.pb"
         self.frozen_filename = os.path.join(self.chkpt_dir, f_name)
@@ -57,6 +56,7 @@ class model_ape_1:
         self.batch_size = batch_size
         self.inp_dims = inp_dims
         self.chkpt_dir = chkpt_dir
+
 
 
 
@@ -478,8 +478,6 @@ class model_ape_1:
         with tf.gfile.GFile(self.frozen_filename, "wb") as f:
             f.write(frozen_graph_def.SerializeToString())
         return
-
-
 
     def inference(self,
                   data,

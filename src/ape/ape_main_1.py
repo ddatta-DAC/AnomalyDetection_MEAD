@@ -9,6 +9,7 @@ import operator
 import pickle
 import sys
 import tensorflow as tf
+tf.logging.set_verbosity(tf.logging.ERROR)
 import numpy as np
 import pandas as pd
 import os
@@ -24,7 +25,6 @@ from collections import OrderedDict
 import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import auc
-
 import glob
 import logging
 import logging.handlers
@@ -97,13 +97,14 @@ def get_cur_path():
 
 # -------- Model Config	  --------- #
 
-
+logger = None
 CONFIG_FILE = 'config_ape_1.yaml'
 with open(CONFIG_FILE) as f:
     config = yaml.safe_load(f)
 
 
 def setup():
+
     global SAVE_DIR
     global _DIR
     global config
@@ -112,7 +113,7 @@ def setup():
     global DATA_DIR
     global domain_dims
     global cur_path
-
+    global logger
     SAVE_DIR = config['SAVE_DIR']
     _DIR = config['_DIR']
     OP_DIR = config['OP_DIR']
@@ -140,16 +141,12 @@ def setup():
     domain_dims = get_domain_arity()
     cur_path = get_cur_path()
 
-
-    handler = logging.handlers.WatchedFileHandler(
-        os.environ.get("LOGFILE", os.path.join( OP_DIR, 'ape.log')))
-    formatter = logging.Formatter(logging.BASIC_FORMAT)
-    handler.setFormatter(formatter)
-    root = logging.getLogger()
-    root.setLevel(os.environ.get("LOGLEVEL", "INFO"))
-    root.addHandler(handler)
-
-    logging.info('Info start')
+    logger = logging.getLogger('main')
+    logger.setLevel(logging.INFO)
+    handler = logging.FileHandler(os.path.join( OP_DIR, 'ape.log'))
+    handler.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    logger.info(' Info start ')
 
 # ----------------------------------------- #
 
@@ -229,14 +226,14 @@ def main():
     '''
 
     test_normal_ids = test_pos[0]
-    test_anomaly_ids = test_anomaly[0][:5000]
+    test_anomaly_ids = test_anomaly[0]
     test_ids = list(np.hstack(
         [test_normal_ids,
          test_anomaly_ids]
     ))
     print (' Len of test_ids ', len(test_ids))
     test_normal_data = test_pos[1]
-    test_anomaly_data = test_anomaly[1][:5000]
+    test_anomaly_data = test_anomaly[1]
     test_data_x = np.vstack([
         test_normal_data,
         test_anomaly_data
@@ -295,13 +292,14 @@ def main():
     )
 
     _auc = auc(recall, precison)
-    logging.info('AUC')
-    logging.info(str(_auc))
+    logger.info('AUC')
+    logger.info(str(_auc))
+
     print('--------------------------')
 
     '''
         if _TIME_IT == False:
-
+    
         _auc = auc(recall, precison)
         print('AUC', _auc)
         plt.figure(figsize=[14, 8])
