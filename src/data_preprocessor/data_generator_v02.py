@@ -685,6 +685,7 @@ def create_ape_model_data():
 
         vals_n = np.array(_tmp.values)
         vals_p = list(row.values)
+
         matrix_neg.append(vals_n)
         matrix_pos.append(vals_p)
         term_2.append(_term_2)
@@ -693,6 +694,9 @@ def create_ape_model_data():
 
     matrix_pos = np.array(matrix_pos)
     matrix_neg = np.array(matrix_neg)
+
+    matrix_pos = matrix_pos.astype(np.int32)
+    matrix_neg = matrix_neg.astype(np.int32)
 
     term_2 = np.array(term_2)
     term_4 = np.array(term_4)
