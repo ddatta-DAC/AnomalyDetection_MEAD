@@ -51,3 +51,20 @@
       - 'Countries (reg.) un-known'
   'num_neg_samples_ape': 3
   'low_freq_bound': 5
+'china_export':
+  'use_cols':
+    - 'PanjivaRecordID'
+    - 'AdminRegion'
+    - 'CountryOfSale'
+    - 'hscode_6'
+    - 'ShipmentDestination'
+    - 'Province'
+    - 'ShipperPanjivaID'
+    - 'ShipperStateRegion'
+    - 'ShipperCountry'
+    - 'TradeType'
+    - 'TransportMethod'
+  'num_neg_samples_v1': 15
+  'column_value_filters': False
+  'num_neg_samples_ape': 3
+  'low_freq_bound': 5

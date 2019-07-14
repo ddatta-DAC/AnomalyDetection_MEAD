@@ -35,6 +35,12 @@ def get_regex(_type):
         if _type == 'test':
             return '*201[7,8]*.csv'
 
+    if DIR == 'china_export':
+        if _type == 'train':
+            return '*0[1-9]*2015*.csv'
+        if _type == 'test':
+            return '*1[0-2]*2015*.csv'
+
     return '*.csv'
 
 
@@ -498,7 +504,7 @@ def create_negative_samples_ape():
     global ns_id_col
     global num_neg_samples_ape
 
-    num_chunks = 25
+    num_chunks = 40
 
     train_data_file = os.path.join(save_dir, 'train_data.csv')
 
@@ -891,7 +897,7 @@ def create_negative_samples_v1():
     global ns_id_col
     global num_neg_samples_v1
 
-    num_chunks = 25
+    num_chunks = 40
     train_data_file = os.path.join(save_dir, 'train_data.csv')
 
     train_df = pd.read_csv(
