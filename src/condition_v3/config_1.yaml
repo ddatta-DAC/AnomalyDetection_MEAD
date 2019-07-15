@@ -1,0 +1,13 @@
+'DATA_DIR': '../../generated_data'
+'_DIR' : 'peru_export'
+'OP_DIR' : 'output'
+'SAVE_DIR' : 'save_dir'
+'K' : 1
+'peru_export' :
+  'log_file' : 'results_1.log'
+'china_import' :
+  'log_file' : 'results_1.log'
+'us_import' :
+  'log_file' : 'results_1.log'
+'china_export':
+  'log_file': 'results_1.log'
