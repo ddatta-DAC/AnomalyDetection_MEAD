@@ -34,7 +34,8 @@ class Partition:
                             features_usage_count=feature[3],
                             X=X,
                             n=n,
-                            logging_level=logging_level) for feature in self.feature_set_tuples]
+                            logging_level=logging_level)
+                 for feature in self.feature_set_tuples]
         elif feature_set_list is not None and len(feature_set_list) > 0:
             self.feature_sets = feature_set_list
         else:
@@ -52,7 +53,7 @@ class Partition:
     def calculate_partition_cost(self, m):  # L(P)
         k = len(self.feature_sets)
         partition_cost = self.log_star(k) + m * np.log2(k)
-        self.logger.info('Partition cost is {}'.format(partition_cost))
+        # self.logger.info('Partition cost is {}'.format(partition_cost))
         return partition_cost
 
     def log_star(self, k):
@@ -73,12 +74,12 @@ class Partition:
         model_cost = np.sum([ct.calculate_model_cost() for ct in self.code_tables])
 
         ct_costs = model_cost + data_cost
-        self.logger.info('_________Current partition is {}__________'.format(self.feature_sets))
-        [self.logger.debug('Partition C\'s for fs {} are \n{}'.format(fs, fs.CT.C)) for fs in self.feature_sets]
-        self.logger.info('Partition\'s CT costs are: data L(D | CT) {} and model {} with total CT cost of {}'
-                          .format(data_cost, model_cost, ct_costs))
+        # self.logger.info('_________Current partition is {}__________'.format(self.feature_sets))
+        # [self.logger.debug('Partition C\'s for fs {} are \n{}'.format(fs, fs.CT.C)) for fs in self.feature_sets]
+        # self.logger.info('Partition\'s CT costs are: data L(D | CT) {} and model {} with total CT cost of {}'
+        #                   .format(data_cost, model_cost, ct_costs))
         total_cost = self.calculate_partition_cost(X.shape[1]) + ct_costs
-        self.logger.info('L(P, CT, D) Total partition cost is: {}'.format(total_cost))
+        # self.logger.info('L(P, CT, D) Total partition cost is: {}'.format(total_cost))
         return total_cost
 
     def build_code_tables(self, X):
@@ -100,14 +101,14 @@ class Partition:
     def calculate_information_gain(self):  # IG
         pass
 
-    def get_new_feature_sets_list_by_add_remove(self, add, remove):
-        if add is None:
+    def get_new_feature_sets_list_by_add_remove(self, _add, _remove):
+        if _add is None:
             raise ValueError('You should provide a FeatureSet to add to current feature sets')
 
-        new_feature_sets = [add]
-        if len(remove) > 0:
+        new_feature_sets = [_add]
+        if len(_remove) > 0:
             for fs in self.feature_sets:
-                if fs not in remove:
+                if fs not in _remove:
                     new_feature_sets.append(fs)
 
         return new_feature_sets

@@ -1,0 +1,8 @@
+ Info start 
+-------------------
+{'learning_rate': 0.0005, 'use_pretrained': False, 'show_loss_figure': False, 'save_loss_figure': False, 'use_bias': True, 'saved_model_file': False, 'num_epochs': 25, 'op_dims': 12, 'batchsize': 128, 'num_neg_samples': 15}
+-------------------
+-------------------
+DIR china_import
+setting up batch size as 
+64

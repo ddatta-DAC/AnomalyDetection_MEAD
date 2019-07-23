@@ -63,6 +63,7 @@ MI_THRESHOLD = 0.1
 ALPHA = 0.1
 DISCARD_0 = True
 logger = None
+
 # ---------------------------------- #
 
 def get_data(data_dir, dir):
@@ -461,15 +462,7 @@ def process(_dir=None):
         for e in tmp:
             sorted_id_score_dict[e[0]] = e[1]
 
-        # save_file_op = '_'.join([
-        #     'result_alg_1_test_c-' + str(c),
-        #     _DIR,
-        #     str(time.time()).split('.')[0]
-        # ]) + '.pkl'
 
-        # SAVE_FILE_OP_PATH = os.path.join(OP_DIR, save_file_op)
-        # with open(SAVE_FILE_OP_PATH, 'wb') as fh:
-        #     pickle.dump(result_dict, fh, pickle.HIGHEST_PROTOCOL)
 
         recall, precison = eval.precision_recall_curve(
             sorted_id_score_dict = sorted_id_score_dict,

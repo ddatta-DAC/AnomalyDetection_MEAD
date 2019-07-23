@@ -438,9 +438,7 @@ class model_ape_1:
                 _x_neg = x_neg[_b * bs: (_b + 1) * bs]
                 _term_2 = term_2[_b * bs: (_b + 1) * bs]
                 _term_4 = term_4[_b * bs: (_b + 1) * bs,:,:]
-                # print(_term_2.shape)
-                # print(_term_4.shape)
-                # exit(1)
+
 
                 _, loss = self.sess.run(
                     [self.train_opt, self.obj],
@@ -485,22 +483,27 @@ class model_ape_1:
             f.write(frozen_graph_def.SerializeToString())
         return
 
-    def inference(self,
-                  data,
-                  ):
+    def inference(
+            self,
+            data,
+            ):
         self.restore_model()
         output = None
         print(data.shape)
         res = []
-
+        bs = 512
+        num_batches = data.shape[0] // bs
+        print(' number of batches ....', num_batches)
         with tf.Session(graph=self.restore_graph) as sess:
-            output = sess.run(
-                self.score,
-                feed_dict={
-                    self.x_pos_inp: data,
-                })
-            res.extend(output)
-
-        res = np.array(output)
+            for _b in range(num_batches+1):
+                _data = data[_b * bs: (_b + 1) * bs]
+                output = sess.run(
+                    self.score,
+                    feed_dict={
+                        self.x_pos_inp: _data,
+                    })
+                res.extend(output)
+        print(len(res))
+        res = np.array(res)
         return res
 

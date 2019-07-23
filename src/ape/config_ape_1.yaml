@@ -1,26 +1,34 @@
 'DATA_DIR': '../../generated_data'
-'_DIR' : 'peru_export'
+'_DIR' : 'china_import'
 'OP_DIR' : 'output'
 'SAVE_DIR' : 'save_dir'
 'MODEL_NAME': 'model_ape'
+'log_file': 'PrecsionRecallValues.log'
 'china_import':
   'embed_size': 10
-  'num_epocs': 5
+  'num_epochs': 10
   'batch_size': 128
-  'use_pretrained': True
-  'learning_rate': 0.001
+  'use_pretrained': False
+  'learning_rate': 0.0005
   'saved_model_file' : False
 'peru_export':
-  'embed_size': 10
-  'num_epocs': 8
+  'embed_size': 8
+  'num_epochs': 10
   'batch_size': 128
   'saved_model_file': 'model_ape_10_k_21_frozen.pb'
   'use_pretrained': False
-  'learning_rate': 0.001
+  'learning_rate': 0.0005
 'us_import':
-  'embed_size': 12
-  'num_epocs': 12
+  'embed_size': 10
+  'num_epochs': 10
   'batch_size': 128
-  'saved_model_file' : False
+  'saved_model_file' : 'model_ape_12_k_27_frozen.pb'
   'use_pretrained': False
-  'learning_rate': 0.001
+  'learning_rate': 0.0005
+'china_export':
+  'embed_size': 12
+  'num_epochs': 12
+  'batch_size': 128
+  'saved_model_file' : 'model_ape_12_k_27_frozen.pb'
+  'use_pretrained': False
+  'learning_rate': 0.0005

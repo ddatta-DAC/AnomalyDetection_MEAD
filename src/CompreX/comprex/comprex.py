@@ -65,10 +65,12 @@ class CompreX(BaseEstimator, ClassifierMixin):
 
         feature_set_tuples = [self.get_feature_name_domain_tuple(f) for f in self.X.columns]
 
-        self.partition_init = Partition(feature_set_tuples=feature_set_tuples,
-                                        X=self.X,
-                                        n=self.n,
-                                        logging_level=self.logging_level)
+        self.partition_init = Partition(
+            feature_set_tuples=feature_set_tuples,
+            X=self.X,
+            n=self.n,
+            logging_level=self.logging_level
+        )
 
         return self.partition_init
 
@@ -146,19 +148,20 @@ class CompreX(BaseEstimator, ClassifierMixin):
         merged_feature_sets = []
         for i, j in itertools.combinations(_partition.get_feature_sets(), 2):
             temp_features = self.get_feature_name_domain_tuple(i.merge_with(j))
-            temp_feature_set = FeatureSet(grouped=temp_features[0],
-                                          features_list=temp_features[1],
-                                          patterns_list=temp_features[2],
-                                          features_usage_count=temp_features[3],
-                                          X=self.X,
-                                          n=self.n,
-                                          temp=True)
+            temp_feature_set = FeatureSet(
+              grouped=temp_features[0],
+              features_list=temp_features[1],
+              patterns_list=temp_features[2],
+              features_usage_count=temp_features[3],
+              X=self.X,
+              n=self.n,
+              temp=True
+            )
             ig = i.calculate_IG(j, temp_feature_set)
 
             merged_feature_sets.append((i, j, temp_feature_set, ig))
 
         merged_feature_sets = pd.DataFrame(merged_feature_sets, columns=['F_i', 'F_j', 'F_ij', 'ig'])
-
         merged_feature_sets.sort_values(by='ig', ascending=False, inplace=True)
 
         return merged_feature_sets
@@ -200,8 +203,10 @@ class CompreX(BaseEstimator, ClassifierMixin):
             f_ij.add_code_table(self.X, c_hat_ij)
 
             # L(9), p_hat
-            new_partition_fss = _partition_init.get_new_feature_sets_list_by_add_remove(add=f_ij,
-                                                                                        remove=[f_i, f_j])
+            new_partition_fss = _partition_init.get_new_feature_sets_list_by_add_remove(
+                _add=f_ij,
+                _remove=[f_i, f_j]
+            )
             new_partition = Partition(feature_set_list=new_partition_fss,
                                       X=self.X,
                                       n=self.n,
@@ -215,8 +220,8 @@ class CompreX(BaseEstimator, ClassifierMixin):
                     self.logger.debug('new c_hat_ij is \n{}'.format(c_hat_ij))
                     # Add new_pattern to FS and CT
                     new_partition.update_feature_set(f_ij.name, self.X, c_hat_ij)
-                    self.logger.info('Inner loop f_ij: {} and row: {}'.format(f_ij, unique_row))
-                    self.logger.debug('C for feature set f_ij {} is \n{}'.format(f_ij, f_ij.CT.C))
+                    # self.logger.info('Inner loop f_ij: {} and row: {}'.format(f_ij, unique_row))
+                    # self.logger.debug('C for feature set f_ij {} is \n{}'.format(f_ij, f_ij.CT.C))
 
                     new_cost= new_partition.calculate_total_cost(self.X)
                     old_cost = _partition_init.calculate_total_cost(self.X)

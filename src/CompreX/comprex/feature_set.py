@@ -1,5 +1,9 @@
 import logging
-from comprex.code_table import CT
+try :
+    from src.CompreX.comprex.code_table import CT
+except:
+    from .src.comprex.code_table import CT
+
 import numpy as np
 
 rng = np.random.RandomState(2018)
@@ -75,8 +79,11 @@ class FeatureSet:
         return [self.grouped.indices[tuple(pattern)] for pattern in self.patterns_list]
 
     def calculate_entropy(self):  # H(F)
-        entropy = - np.sum(self.patterns_usage_count / self.n * np.log2(self.patterns_usage_count / self.n))
-        self.logger.debug('Entropy is {} for featureset {}'.format(entropy, self.get_name()))
+        entropy = - np.sum(
+            self.patterns_usage_count / self.n * np.log2(
+                self.patterns_usage_count / self.n)
+        )
+        # self.logger.debug('Entropy is {} for featureset {}'.format(entropy, self.get_name()))
         return entropy
 
     def calculate_IG(self, f_j, temp_feature_set):

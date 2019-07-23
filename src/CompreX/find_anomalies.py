@@ -1,14 +1,12 @@
 import matplotlib.pyplot as plt
-import time
 import os
-import sys
 import time
-import seaborn as sns
 import glob
 from collections import OrderedDict
 import numpy as np
 import pandas as pd
 import logging
+import logging.handlers
 import yaml
 import pickle
 import inspect
@@ -28,14 +26,19 @@ cur_path = '/'.join(
 sys.path.append(cur_path)
 
 try:
-    from .src.Eval import evaluation_v1 as eval
+    from src.Eval import eval_v1 as eval
 except:
-    from src.Eval import evaluation_v1 as eval
+    from .src.Eval import eval_v1 as eval
 
 try:
     from src.CompreX.comprex.comprex import CompreX
 except:
     from .src.CompreX.comprex.comprex import CompreX
+
+try:
+    from src.data_fetcher import data_fetcher
+except:
+    from .src.data_fetcher import data_fetcher
 
 CONFIG_FILE = 'config_compreX.yaml'
 with open(CONFIG_FILE) as f:
@@ -70,9 +73,7 @@ def trivial_test():
     estimator.fit(X)
     res = estimator.predict(X)
     print(type(res))
-
     print(res)
-
 
 # --------------------------- #
 
@@ -90,12 +91,11 @@ def setup():
     _DIR = config['_DIR']
     OP_DIR = config['OP_DIR']
     DATA_DIR = config['DATA_DIR']
+
     if not os.path.exists(SAVE_DIR):
         os.mkdir(SAVE_DIR)
     SAVE_DIR = os.path.join(SAVE_DIR, _DIR)
 
-    print(OP_DIR)
-    print(SAVE_DIR)
     if not os.path.exists(SAVE_DIR):
         os.mkdir(SAVE_DIR)
 
@@ -107,16 +107,19 @@ def setup():
         os.mkdir(OP_DIR)
     MODEL_NAME = 'compreX'
 
+    # if not os.path.exists(SAVE_DIR):
+    #     os.mkdir(SAVE_DIR)
+    #     if os.path.exists(os.path.join(SAVE_DIR, _DIR)):
+    #         os.mkdir(os.path.join(SAVE_DIR, _DIR))
 
-# --------
-# Ensure the columns have different values.
-# Append column id to each value
-# --------
-def get_data():
-    global _TIME_IT
-    global DATA_X_FILE
-    global _DIR
-    global DATA_DIR
+
+
+'''
+Ensure the columns have different values.
+Append column id to each value
+'''
+
+def get_data(data_dir, dir):
 
     def stringify_data(arr) -> np.array:
         tmp1 = []
@@ -129,49 +132,47 @@ def get_data():
         tmp1 = np.array(tmp1)
         return tmp1
 
-    DATA_X_FILE = os.path.join(DATA_DIR, _DIR, 'train_x.pkl')
-    with open(DATA_X_FILE, 'rb') as fh:
-        DATA_X = pickle.load(fh)
-
-    DATA_X = stringify_data(DATA_X)
-    print(DATA_X.shape)
-
-
-    DATA_Xid_FILE = os.path.join(DATA_DIR, _DIR, 'train_x_id.pkl')
-    with open(DATA_Xid_FILE, 'rb') as fh:
-        DATA_X_id = pickle.load(fh)
-
-    print(len(DATA_X_id))
-
-    _test_files = os.path.join(
-        DATA_DIR,
-        _DIR,
-        'test_x_*.pkl'
+    train_x_pos, _, _, _, domain_dims = data_fetcher.get_data_v3(
+        data_dir,
+        dir,
+        c=1
     )
-    test_files = sorted(glob.glob(_test_files))
-    print(test_files)
 
-    # test data is the data (N*M), needs to be appended to DATA_X
-    test_x = []
-    test_anom_id = []
-    test_all_id = []
+    train_x_pos = stringify_data(train_x_pos)
 
-    for t in test_files:
-        print(t)
-        with open(t, 'rb') as fh:
-            data = pickle.load(fh)
-            test_anom_id.append(data[0])
-            test_all_id.append(data[1])
-            _tmp = data[2]
-            _tmp = stringify_data(_tmp)
-            test_x.append(_tmp)
-            print(data[0].shape, len(data[1]), _tmp.shape)
+    test_dict_cIdx_data = { }
+    for c in range(1,3+1):
+        _, _, test_pos, test_anomaly, _ = data_fetcher.get_data_v3(
+            data_dir,
+            dir,
+            c=c
+        )
 
-    return DATA_X, DATA_X_id, test_anom_id, test_all_id, test_x
+        test_pos_idList = test_pos[0]
+        test_pos_x = test_pos[1]
+        test_anomaly_idList = test_anomaly[0]
+        test_anomaly_x = test_anomaly[1]
+
+        test_ids = list(np.hstack(
+            [test_pos_idList,
+             test_anomaly_idList]
+        ))
+
+        test_data_x = np.vstack([
+            test_pos_x,
+            test_anomaly_x
+        ])
+
+        test_data_x = stringify_data(test_data_x)
+        test_dict_cIdx_data[c] = [test_ids, test_data_x, test_anomaly_idList]
+
+    return train_x_pos, test_dict_cIdx_data
+
 
 
 # --------------------------- #
 def main():
+    global DATA_DIR
     global _TIME_IT
     global _DIR
     global OP_DIR
@@ -179,69 +180,52 @@ def main():
     global config
     setup()
 
+    train_x_pos, test_dict_cIdx_data = get_data(DATA_DIR, _DIR)
 
-    if not os.path.exists(SAVE_DIR):
-        os.mkdir(SAVE_DIR)
-        if os.path.exists(os.path.join(SAVE_DIR, _DIR)):
-            os.mkdir(os.path.join(SAVE_DIR, _DIR))
+    '''
+    TRAIN model
+    '''
+    # ---- Core ------ #
+    _df_input = []
+    for _j in range(train_x_pos.shape[0]):
+        _df_input.append(list(train_x_pos[_j]))
 
-    checkpoint_dir = os.path.join(SAVE_DIR)
-    print(os.getcwd())
+    cols = ['f' + str(j) for j in range(train_x_pos.shape[1])]
+    X = pd.DataFrame(
+        _df_input,
+        columns=cols,
+        index=[_j for _j in range(train_x_pos.shape[0])],
+        dtype='category'
+    )
 
-    # data_x, test_anom_id, test_all_id, test_x =
-    data_x, data_x_id, test_anom_id, test_all_id, test_x = get_data()
-    count_test_sets = min(len(test_x),1)
+    estimator = CompreX(
+        logging_level=logging.ERROR
+    )
+    estimator.transform(X)
+    estimator.fit(X)
 
-    test_result_r = []
-    test_result_p = []
-    res = None
-    time_arr = []
-    auc_arr = []
-    for i in range(count_test_sets):
+    ''' Start of test '''
+    for c, _t_data in test_dict_cIdx_data.items():
+        test_ids = _t_data[0]
+        test_data_x = _t_data[1]
+        test_anomaly_idList = _t_data[2]
+        start = time.time()
+
+
+        test_result_r = []
+        test_result_p = []
+
         start_time = time.time()
-
-        _x = test_x[i]
-        _x = np.vstack([data_x, _x])
-
-        test_ids = test_all_id[i]
-        print(' >> ', len(test_ids))
-        _x_id = list(data_x_id)
-        _x_id.extend(test_ids)
-
-        print(_x.shape)
-        # _x = _x[:2000, :4]
-        # _x_id = _x_id[:2000]
-
-        print(_x.shape)
-        print(len(_x_id))
-        print(_x)
-
-        # known anomalies
-        anomaly_ids = test_anom_id[i]
-
-        # ---- Core ------ #
-        _df_input = []
-        for _j in range(_x.shape[0]):
-            _df_input.append(list(_x[_j]))
-
-        cols = ['f' + str(j) for j in range(_x.shape[1])]
-        X = pd.DataFrame(
-            _df_input,
-            columns=cols,
-            index=[_j for _j in range(_x.shape[0])],
-            dtype='category'
-        )
-
-        estimator = CompreX(logging_level=logging.ERROR)
-        estimator.transform(X)
-        estimator.fit(X)
-        res = estimator.predict(X)
+        res = estimator.predict(test_data_x)
         '''
             'res' is ordered in the order of the input
             match it with the ordered list of ids
         '''
         anomaly_scores = list(res)
-        anomaly_score_dict = { k:v for k,v in zip(_x_id,anomaly_scores) }
+        anomaly_score_dict = {
+            k:v
+            for k,v in zip(test_ids,anomaly_scores)
+        }
 
         # --------------- #
         ''' 
@@ -260,120 +244,19 @@ def main():
 
         recall, precison = eval.precision_recall_curve(
             sorted_id_score_dict,
-            anomaly_id_list=anomaly_ids
+            anomaly_id_list=test_anomaly_idList
         )
+
         end_time = time.time()
         time_taken = end_time - start_time
         _auc = auc(recall, precison)
 
-        print('Test case ', i , 'Time taken [seconds]', time_taken , 'AUC',  _auc)
+        print('Time taken [seconds]', time_taken , 'AUC',  _auc)
         print('--------------------------')
-        time_arr.append(time_taken)
-        auc_arr.append(_auc)
 
 
-
-    print('=================')
-    print('Avg AUC :', np.mean(auc_arr))
-    print('Avg time', np.mean(time_taken))
-
-
-    '''
-    if _TIME_IT == False:
-    _auc = auc(recall, precison)
-    print('AUC', _auc)
-    plt.figure(figsize=[14, 8])
-    plt.plot(
-        recall,
-        precison,
-        color='blue', linewidth=1.75)
-
-    plt.xlabel('Recall', fontsize=15)
-    plt.ylabel('Precision', fontsize=15)
-    plt.title('Recall | AUC ' + str(_auc), fontsize=15)
-    f_name = 'precison-recall_1_test_' + str(i) + '.png'
-    f_path = os.path.join(OP_DIR, f_name)
-
-    # plt.savefig(f_path)
-    test_result_r.append(recall)
-    test_result_p.append(precison)
-    plt.close()
-
-    
-    '''
-    print('----------------------------')
-    '''
-
-    plt.figure(figsize=[14, 8])
-    j = 1
-    mean_auc = 0
-    all_auc = []
-    for _x, _y in zip(test_result_r, test_result_p):
-        plt.plot(
-            _x,
-            _y,
-            linewidth=1.75,
-            label='Test set ' + str(j)
-        )
-        j += 1
-        _auc = auc(_x, _y)
-        print(_auc)
-        mean_auc += _auc
-        all_auc.append(_auc)
-    mean_auc = np.mean(all_auc)
-
-    print('Mean ', mean_auc)
-    plt.xlabel('Recall', fontsize=15)
-    plt.ylabel('Precision', fontsize=15)
-    plt.title('Precision Recall Curve', fontsize=17)
-    plt.legend(loc='best')
-    plt.show()
-    plt.close()
-
-    plt.figure(figsize=[14, 8])
-    plt.title('Distribution of scores in Model 2', fontsize=17)
-    plt.ylabel('Scores', fontsize=15)
-    plt.xlabel('Samples', fontsize=15)
-    _y = list(sorted(res))
-    _x = list(range(len(_y)))
-    plt.plot(
-        _x,
-        _y,
-        linewidth=1.75
-    )
-
-    # plt.show()
-    plt.close()
-    if _TIME_IT == False:
-        # save the results
-        _dict = {
-            'mean_auc': mean_auc,
-            'all_auc': ';'.join([str(_) for _ in all_auc])
-        }
-        for k, v in config[_DIR]:
-            _dict[k] = str(v)
-
-        _dict = {k: [v] for k, v in _dict.items()}
-        df = pd.DataFrame(_dict)
-
-        res_fname = 'ape_result' + str(time.time()).split('.')[0] + '.csv'
-        df.to_csv(
-            os.path.join(OP_DIR, res_fname)
-        )
-    if _TIME_IT:
-        print('Time Taken :', end_time - start_time)
-        
-    
-    '''
 
 # ---------------------------- #
-
-
-# if __name__ == "__main__":
-#     create_args()
-#     FLAGS.show_loss_fig = True
-#     tf.app.run(main)
-
 
 main()
 

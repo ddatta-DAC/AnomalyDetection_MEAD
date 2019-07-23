@@ -3,14 +3,14 @@
 'OP_DIR' : 'output'
 'SAVE_DIR' : 'save_dir'
 'MODEL_NAME' : 'model_v1_2'
-'log_file': 'results_log.log'
+'log_file': 'results_log_1.log'
 'china_import':
   'learning_rate' : 0.00025
   'use_pretrained' : False
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
-  'saved_model_file' : 'frozen_model_v1_28_12_1562798264.pb'
+  'saved_model_file' : False
   'num_epochs' : 25
   'op_dims' : 8,12
   'batchsize': 64
@@ -21,7 +21,7 @@
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
-  'saved_model_file' : 'frozen_model_v1_28_8_1562854829.pb'
+  'saved_model_file' : False
   'num_epochs' : 25
   'op_dims' : 8,8
   'batchsize': 64
@@ -32,9 +32,19 @@
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
-  'saved_model_file' : 'frozen_model_v1_28_12_1562789098.pb'
+  'saved_model_file' : False
   'num_epochs' : 25
   'op_dims' : 8,12
   'batchsize': 64
   'num_neg_samples' : 15
-
+'china_export':
+  'learning_rate' : 0.00025
+  'use_pretrained' : False
+  'show_loss_figure' : False
+  'save_loss_figure' : False
+  'use_bias' : True
+  'saved_model_file' : False
+  'num_epochs' : 25
+  'op_dims' : 8,12
+  'batchsize': 64
+  'num_neg_samples' : 15

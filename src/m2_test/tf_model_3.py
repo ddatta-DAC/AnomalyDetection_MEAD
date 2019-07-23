@@ -16,12 +16,6 @@ import time
 import inspect
 from collections import OrderedDict
 import matplotlib.pyplot as plt
-from sklearn.utils import shuffle
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.linalg import svd
-from sklearn.decomposition import TruncatedSVD
-from sklearn.utils.extmath import randomized_svd
-import yaml
 from tensorflow.contrib.tensorboard.plugins import projector
 try:
     tf.random.set_random_seed(729)
@@ -119,7 +113,7 @@ class model:
             if _d <= 1:
                 _d += 1
             layer_1_dims.append(_d)
-        # print(layer_1_dims)
+
 
         with tf.name_scope(wb_scope_name):
             prefix = self.model_scope_name + '/' + wb_scope_name + '/'
@@ -375,14 +369,15 @@ class model:
             print(norm_loss.shape)
 
             self.loss_2 = norm_loss
+
             if self.loss_1_flag is True:
-                self.loss =  self.loss_1 +  self.loss_2 + self.loss_3
+                self.loss =  self.loss_2 + self.loss_3
             else:
                 self.loss = self.loss_3
 
             print(' shape of loss -->> ', self.loss.shape)
 
-            '''
+
             # L2 regularization of weights in embedding layer
             regularizer_beta = tf.constant(math.pow(10, -10))
             for _W in self.W:
@@ -395,7 +390,7 @@ class model:
                     self.loss += _
 
             print(' shape of loss -->> ', self.loss.shape)
-            '''
+
 
 
             # print('Loss shape', self.loss.shape)
@@ -807,26 +802,26 @@ class model:
         self.lambda_2 = b
         self.lambda_3 = c
 
-    # def get_pairwise_cosine_dist(self, x):
-    #
-    #     self.restore_model()
-    #     output = []
-    #     bs = self.batch_size
-    #     num_batches = x.shape[0] // bs
-    #
-    #     with tf.Session(graph=self.restore_graph) as sess:
-    #         for _b in range(num_batches):
-    #             _x = x[_b * bs: (_b + 1) * bs]
-    #             if _b == num_batches - 1:
-    #                 _x = x[_b * bs:]
-    #
-    #             _output = sess.run(
-    #                 self.pairwise_cosine,
-    #                 feed_dict={
-    #                     self.x_pos_inp: _x
-    #                 }
-    #             )
-    #             output.extend(_output)
-    #         res = np.array(output)
-    #
-    #     return res
+    def get_pairwise_cosine_dist(self, x):
+
+        self.restore_model()
+        output = []
+        bs = self.batch_size
+        num_batches = x.shape[0] // bs
+
+        with tf.Session(graph=self.restore_graph) as sess:
+            for _b in range(num_batches):
+                _x = x[_b * bs: (_b + 1) * bs]
+                if _b == num_batches - 1:
+                    _x = x[_b * bs:]
+
+                _output = sess.run(
+                    self.pairwise_cosine,
+                    feed_dict={
+                        self.x_pos_inp: _x
+                    }
+                )
+                output.extend(_output)
+            res = np.array(output)
+
+        return res
