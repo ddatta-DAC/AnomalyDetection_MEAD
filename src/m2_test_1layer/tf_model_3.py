@@ -448,7 +448,7 @@ class model:
         norm_b = tf.reduce_sum(tf.square(norm_b), axis=-1, keepdims=True)
         if reciprocal:
             norm_b = tf.pow(norm_b, -1)
-        r_b = tf.tanh(0.5 * norm_b)
+        r_b = tf.tanh( norm_b )
         return r_b
 
     # This part should be used for norm based optimization
@@ -589,10 +589,10 @@ class model:
         '''
         implement early stopping based on loss 3 
         '''
-        cur_epoch_loss_3 = 0
-        prev_epoch_loss_3 = 0
-        cur_epoch_loss_1 = 0
-        prev_epoch_loss_1 = 0
+        # cur_epoch_loss_3 = 0
+        # prev_epoch_loss_3 = 0
+        # cur_epoch_loss_1 = 0
+        # prev_epoch_loss_1 = 0
 
         for e in range(self.num_epochs):
 
@@ -637,18 +637,14 @@ class model:
                     print('[ERROR] Loss is NaN !!!, breaking...')
                     break
 
-
-
             cur_epoch_loss_1 = np.mean(_loss_1)
             cur_epoch_loss_3 = np.mean(_loss_3)
-            print(' >>> ', cur_epoch_loss_1, cur_epoch_loss_3)
+            print(' >>> ', cur_epoch_loss_3)
 
-
-
-            if e > 0:
-                delta = abs(cur_epoch_loss_3) - abs(prev_epoch_loss_3)
-                if delta < delta_limit and early_cutoff is False :
-                    early_cutoff = False
+            # if e > 0:
+            #     delta = abs(cur_epoch_loss_3) - abs(prev_epoch_loss_3)
+            #     if delta < delta_limit and early_cutoff is False :
+            #         early_cutoff = False
 
             '''
             check the direction of pairwise angular distance
