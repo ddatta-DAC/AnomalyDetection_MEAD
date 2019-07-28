@@ -468,9 +468,11 @@ with open(CONFIG_FILE) as f:
 try:
     log_file = CONFIG['log_file']
 except:
-    log_file = 'm1.log'
+    log_file = 'm2.log'
 
-for _exec_dir in ['us_import']:
+log_file = 'm2.log'
+
+for _exec_dir in ['china_import']:
     _DIR = _exec_dir
     logger = logging.getLogger('main')
     logger.setLevel(logging.INFO)

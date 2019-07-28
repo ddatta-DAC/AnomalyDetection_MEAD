@@ -25,7 +25,7 @@
   'use_bias' : True
   'saved_model_file' : False
   'num_epochs' : 25
-  'op_dims' : 8
+  'op_dims' : 10
   'batchsize': 128
   'num_neg_samples' : 15
 'us_import':
