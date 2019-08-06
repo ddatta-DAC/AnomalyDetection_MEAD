@@ -348,36 +348,13 @@ class model:
             else:
                 return
 
-            # ensure embeddings sum to 1
-            # norm_loss = []
-            # for i in range(self.num_domains):
-            #     t1 = tf.norm(emb_op_pos[i], axis=-1, keep_dims=True)
-            #     t1 = tf.square(1 - t1)
-            #     norm_loss.append(t1)
-            #
-            # norm_loss = tf.stack(norm_loss, axis=1)
-            # norm_loss = tf.squeeze(norm_loss, axis=-1)
-            # norm_loss = tf.reduce_mean(norm_loss, axis=-1, keepdims=True)
-            # print(norm_loss.shape)
-
-            # self.loss_2 = norm_loss
             self.loss =  self.loss_3
-
             print(' shape of loss -->> ', self.loss.shape)
 
             # L2 regularization of weights in embedding layer
             print('L2 loss flag ', self._enable_l2_loss)
             if  self._enable_l2_loss:
                 regularizer_beta = tf.constant(math.pow(10, -2))
-                # for _W in self.W:
-                #     regularizer = [regularizer_beta * tf.nn.l2_loss(_) for _ in _W]
-                #     for _ in regularizer:
-                #         self.loss += _
-                # for _B in self.b:
-                #     regularizer = [regularizer_beta * tf.nn.l2_loss(_) for _ in _B]
-                #     for _ in regularizer:
-                #         self.loss += _
-
                 for _W in self.W_item:
                     regularizer = [regularizer_beta * tf.nn.l2_loss(_W)]
                     for _ in regularizer:
@@ -385,12 +362,7 @@ class model:
 
             print(' shape of loss -->> ', self.loss.shape)
 
-
-
-            # print('Loss shape', self.loss.shape)
             tf.summary.scalar('loss', tf.reduce_mean(self.loss))
-            # tf.summary.scalar('loss_1', tf.reduce_mean(self.loss_1))
-            # tf.summary.scalar('loss_2', tf.reduce_mean(self.loss_2))
 
             self._add_var_summaries()
             self.optimizer = tf.train.AdamOptimizer(
@@ -431,8 +403,11 @@ class model:
             norm_b.append(_ab)
 
         norm_b = tf.stack(norm_b, axis=1)
+        self.weighted_emb = norm_b
         norm_b = tf.reduce_sum(norm_b, axis=-2)
+
         norm_b = tf.reduce_sum(tf.square(norm_b), axis=-1, keepdims=True)
+
         if reciprocal:
             norm_b = tf.pow(norm_b, -1)
         r_b = tf.tanh( norm_b )
@@ -464,8 +439,7 @@ class model:
         x_neg_inp_arr = [tf.squeeze(_, axis=1) for _ in x_neg_inp_arr]
 
         r_b_neg = []
-        # ang_dist_neg = []
-        # and_dist_pos = self.pairwise_ang_dist
+
 
         for _neg in range(self.num_neg_samples):
             x_inp_neg = tf.split(
@@ -482,17 +456,6 @@ class model:
             )
             r_b_neg.append(r_b)
 
-            # ad_n = self.calculate_angular_sim(emb_op_n)
-            # print(ad_n.shape)
-            # ad_n = tf.add(
-            #     and_dist_pos,
-            #     - ad_n
-            # )
-            # ang_dist_neg.append(ad_n)
-
-            # emb_op_n = tf.stack(emb_op_n,axis=1)
-            # emb_op_neg.append(emb_op_n)
-
         r_b_neg = tf.stack(
             r_b_neg,
             axis=-1
@@ -504,28 +467,6 @@ class model:
         )
 
         print('r_b_neg shape ', r_b_neg.shape)
-
-        # ang_dist_neg = tf.stack(
-        #     ang_dist_neg,
-        #     axis=-1
-        # )
-        #
-        # ang_dist_neg = tf.squeeze(
-        #     ang_dist_neg,
-        #     axis=1
-        # )
-
-        # print('ang_dist_neg shape', ang_dist_neg.shape)
-
-        # part_1 = tf.square(self.pairwise_ang_dist)
-        # part_2 = tf.reduce_mean(
-        #     ang_dist_neg,
-        #     axis=-1,
-        #     keepdims=True
-        # )
-        #
-        #
-        # self.loss_1 = part_2
 
         # calculate loss
         loss_3 = tf.log(self.r_b)
@@ -570,16 +511,9 @@ class model:
         summary_writer = tf.summary.FileWriter(self.summary_data_loc)
         step = 0
 
-        # early_cutoff = False
-        # delta_limit = math.pow(10,-4)
-
         '''
         implement early stopping based on loss 3 
         '''
-        # cur_epoch_loss_3 = 0
-        # prev_epoch_loss_3 = 0
-        # cur_epoch_loss_1 = 0
-        # prev_epoch_loss_1 = 0
 
         for e in range(self.num_epochs):
 
@@ -607,8 +541,6 @@ class model:
                     }
                 )
 
-                # _loss_3.append(np.mean(loss3))
-                # _loss_1.append(np.mean(loss1))
                 batch_loss = np.mean(loss)
                 losses.append(batch_loss)
 
@@ -624,25 +556,9 @@ class model:
                     print('[ERROR] Loss is NaN !!!, breaking...')
                     break
 
-            # cur_epoch_loss_1 = np.mean(_loss_1)
-            # cur_epoch_loss_3 = np.mean(_loss_3)
-            # print(' >>> ', cur_epoch_loss_3)
-
-            # if e > 0:
-            #     delta = abs(cur_epoch_loss_3) - abs(prev_epoch_loss_3)
-            #     if delta < delta_limit and early_cutoff is False :
-            #         early_cutoff = False
-
             '''
             check the direction of pairwise angular distance
             '''
-            # if early_cutoff :
-            #    if cur_epoch_loss_1 > prev_epoch_loss_1 :
-            #        print(' breaking due to early cut off ')
-            #        break
-
-            # prev_epoch_loss_3 = cur_epoch_loss_3
-            # prev_epoch_loss_1 = cur_epoch_loss_1
 
 
             if Check_Save_Prev is True:
@@ -678,64 +594,6 @@ class model:
             plt.close()
         return self.frozen_file
 
-    def get_embedding_mean(self, x):
-        self.set_w_mean = False
-        self.restore_model()
-        output = []
-        bs = self.batch_size
-        num_batches = x.shape[0] // bs
-
-        with tf.Session(graph=self.restore_graph) as sess:
-            for _b in range(num_batches):
-                _x = x[_b * bs: (_b + 1) * bs]
-                if _b == num_batches - 1:
-                    _x = x[_b * bs:]
-
-                _output = sess.run(
-                    self.concat_emb_op,
-                    feed_dict={
-                        self.x_pos_inp: _x
-                    }
-                )
-                output.extend(_output)
-            res = np.array(output)
-
-        return res
-
-    def getpart_2_op_embeddings(self, x):
-        self.restore_model()
-        output = []
-        bs = self.batch_size
-        num_batches = x.shape[0] // bs
-
-        with tf.Session(graph=self.restore_graph) as sess:
-            for _b in range(num_batches):
-                _x = x[_b * bs: (_b + 1) * bs]
-                if _b == num_batches - 1:
-                    _x = x[_b * bs:]
-
-                _output = sess.run(
-                    self.mean_emb_op,
-                    feed_dict={
-                        self.x_pos_inp: _x
-                    }
-                )
-                output.extend(_output)
-
-            res = np.array(output)
-            tf_data = tf.Variable(res)
-            saver = tf.train.Saver([tf_data])
-            sess.run(tf_data.initializer)
-            saver.save(sess, os.path.join('./..', 'tf_data.ckpt'))
-            config = projector.ProjectorConfig()
-            embedding = config.embeddings.add()
-            embedding.tensor_name = tf_data.name
-            projector.visualize_embeddings(
-                tf.summary.FileWriter('./..'),
-                config
-            )
-
-        return res
 
     def get_event_score(
             self,
@@ -763,56 +621,32 @@ class model:
             return res
 
     '''
-    Follow the angular distance than cosine distance
-    Input : [ ?, num_domains, emb_dim ]
+    Get just the embeddings
     '''
 
-    # def calculate_angular_sim(self, emb_op):
-    #     self.pi = 180
-    #     ang_dist = []
-    #     for i in range(self.num_domains):
-    #         for j in range(i + 1, self.num_domains):
-    #             r1 = tf.reduce_sum(
-    #                 tf.multiply(
-    #                     tf.nn.l2_normalize(emb_op[i], axis=-1),
-    #                     tf.nn.l2_normalize(emb_op[j], axis=-1),
-    #                 ),
-    #                 1,
-    #                 keepdims=True
-    #             )
-    #             _dist = tf.acos(r1) / (self.pi)
-    #             ang_dist.append(_dist)
-    #
-    #     ang_dist = tf.stack(ang_dist, axis=1)
-    #     ang_dist = tf.squeeze(ang_dist, axis=-1)
-    #     ang_dist = tf.reduce_sum(ang_dist, axis=-1, keepdims=True)
-    #     return ang_dist
+    def get_record_embeddings(
+            self,
+            x
+    ):
+        self.restore_model()
+        output = []
+        bs = self.batch_size
+        num_batches = x.shape[0] // bs
 
-    # def set_loss_lambda(self, a, b, c):
-    #     self.lambda_1 = a
-    #     self.lambda_2 = b
-    #     self.lambda_3 = c
+        with tf.Session(graph=self.restore_graph) as sess:
+            for _b in range(num_batches):
+                _x = x[_b * bs: (_b + 1) * bs]
+                if _b == num_batches - 1:
+                    _x = x[_b * bs:]
+                _output = sess.run(
+                    self.weighted_emb,
+                    feed_dict={
+                        self.x_pos_inp: _x,
+                    }
+                )
 
-    # def get_pairwise_cosine_dist(self, x):
-    #
-    #     self.restore_model()
-    #     output = []
-    #     bs = self.batch_size
-    #     num_batches = x.shape[0] // bs
-    #
-    #     with tf.Session(graph=self.restore_graph) as sess:
-    #         for _b in range(num_batches):
-    #             _x = x[_b * bs: (_b + 1) * bs]
-    #             if _b == num_batches - 1:
-    #                 _x = x[_b * bs:]
-    #
-    #             _output = sess.run(
-    #                 self.pairwise_cosine,
-    #                 feed_dict={
-    #                     self.x_pos_inp: _x
-    #                 }
-    #             )
-    #             output.extend(_output)
-    #         res = np.array(output)
-    #
-    #     return res
+                output.extend(_output)
+            res = np.array(output)
+            return res
+
+

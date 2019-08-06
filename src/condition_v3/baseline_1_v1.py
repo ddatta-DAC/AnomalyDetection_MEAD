@@ -242,7 +242,7 @@ def get_attribute_sets(
     op_file_name = 'set_pairs_' + str(k) + '.pkl'
     op_file_path = os.path.join(SAVE_DIR, op_file_name)
 
-    if os.path.exists(op_file_path):
+    if os.path.exists(op_file_path) and False :
         with open(op_file_path, 'rb') as fh:
             set_pairs = pickle.load(fh)
         return set_pairs
@@ -413,6 +413,7 @@ def process(_dir=None):
 
     ''' Start of train '''
     # Number of training instances
+    t1 = time.time()
     N = train_x.shape[0]
     obj_ADTree = ad_tree_v1.ADT()
     obj_ADTree.setup(train_x)
@@ -427,6 +428,9 @@ def process(_dir=None):
         obj_ADTree,
         k=K
     )
+    t2 = time.time()
+    train_time = t2-t1
+    logger.info('train_time taken ' + str(train_time))
 
     print(' Number of attribute set pairs ', len(attribute_set_pairs))
 
@@ -455,7 +459,7 @@ def process(_dir=None):
         end = time.time()
         _time = end - start
 
-        print(' Time taken :',  end - start)
+        # print(' Time taken :',  end - start)
 
         tmp = sorted(results.items(), key=operator.itemgetter(1))
         sorted_id_score_dict = OrderedDict()

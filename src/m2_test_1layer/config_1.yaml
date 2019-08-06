@@ -4,7 +4,7 @@
 'SAVE_DIR' : 'save_dir'
 'MODEL_NAME' : 'model_v1_2'
 'eval_type' : 1
-'log_file' : 'results_1layer_log_v2.log'
+'log_file' : 'main.log'
 'num_jobs' : 1
 'china_import':
   'learning_rate' : 0.0005
@@ -41,7 +41,7 @@
   'num_neg_samples' : 15
 'china_export':
   'learning_rate' : 0.0005
-  'use_pretrained' : True
+  'use_pretrained' : False
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True

@@ -1,0 +1,22 @@
+ Info start 
+--------
+peru_export
+--------
+train_time taken 0.38689684867858887
+c = 1
+Time taken 34.025527238845825
+AUC : 0.5106287545790528
+c = 2
+Time taken 31.371381282806396
+AUC : 0.567260640150247
+c = 3
+Time taken 31.694605112075806
+AUC : 0.5916969101737843
+ Info start 
+--------
+peru_export
+--------
+train_time taken 0.4154181480407715
+c = 1
+Time taken 33.93573331832886
+AUC : 0.5106287545790528

@@ -23,9 +23,9 @@ sys.path.append('./../../.')
 
 
 try:
-    import src.m2_test_1layer.tf_model_3 as tf_model
+    import src.m2_test_1layer.tf_model_3_withNorm as tf_model
 except:
-    from .src.m2_test_1layer import tf_model_3 as tf_model
+    from .src.tf_model_3_withNorm import tf_model_3 as tf_model
 
 try:
     from src.Eval import eval_v1 as eval
@@ -318,7 +318,7 @@ def main():
         _DIR,
         c=1
     )
-
+    train_x_neg = train_x_neg[:,:12,:]
     testing_dict = {}
 
     for _c in range(1, 3 + 1):
@@ -347,8 +347,9 @@ with open(CONFIG_FILE) as f:
 try:
     log_file = CONFIG['log_file']
 except:
-    log_file = 'analysis.log'
+    log_file = 'results_1layer_withNorm_v1.log'
 
+log_file = 'results_1layer_withNorm_v1.log'
 
 _DIR = CONFIG['_DIR']
 logger = logging.getLogger('main')

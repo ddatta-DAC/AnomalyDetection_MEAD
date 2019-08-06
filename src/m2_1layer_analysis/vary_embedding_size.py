@@ -23,9 +23,9 @@ sys.path.append('./../../.')
 
 
 try:
-    import src.m2_test_1layer.tf_model_3 as tf_model
+    import src.m2_test_1layer.tf_model_3_withNorm as tf_model
 except:
-    from .src.m2_test_1layer import tf_model_3 as tf_model
+    from .src.m2_test_1layer import tf_model_3_withNorm as tf_model
 
 try:
     from src.Eval import eval_v1 as eval
@@ -143,20 +143,13 @@ def process_all(
         train_x_pos,
         train_x_neg,
         testing_dict,
-        predef_neg_samples = 5
+        es = 2
 ):
     global logger
 
-    logger.info('setting up number of negative samples ')
-    logger.info(CONFIG[_DIR]['num_neg_samples'])
-
-
-    train_x_neg = train_x_neg[:,:predef_neg_samples,:]
-    num_neg_samples = train_x_neg.shape[1]
-
-
-    CONFIG[_DIR]['num_neg_samples'] = predef_neg_samples
+    CONFIG[_DIR]['op_dims'] = es
     model_obj = set_up_model(CONFIG, _DIR)
+    logger.info('Model embedding dimension: ' + str(CONFIG[_DIR]['op_dims']))
 
     _use_pretrained = CONFIG[_DIR]['use_pretrained']
 
@@ -183,7 +176,7 @@ def process_all(
             train_x_pos,
             train_x_neg
         )
-
+    all_c_auc = []
     # 3 test cases by value of c
     for _c, test_data_item in testing_dict.items():
         print('----->', _c)
@@ -257,16 +250,15 @@ def process_all(
         Save the precision recall values
         Later to be plotted in ipynb
         '''
-        recall_str = ','.join([str(_) for _ in recall])
-        precision_str = ','.join([str(_) for _ in precison])
-        logger.info(precision_str)
-        logger.info(recall_str)
-
         _auc = auc(recall, precison)
-        logger.info('AUC')
-        logger.info(str(_auc))
+
+        all_c_auc.append(_auc)
+
 
         print('--------------------------')
+    avg_auc = np.mean(all_c_auc)
+    logger.info('Avg AUC')
+    logger.info(str(avg_auc))
 
 
 def viz_tsne(data):
@@ -288,7 +280,7 @@ def viz_tsne(data):
     plt.show()
 
 
-def vary_num_neg_samples():
+def vary_embedding_size():
     global embedding_dims
     global SAVE_DIR
     global _DIR
@@ -299,8 +291,8 @@ def vary_num_neg_samples():
     global DOMAIN_DIMS
     global logger
 
-    with open(CONFIG_FILE) as f:
-        CONFIG = yaml.safe_load(f)
+    # with open(CONFIG_FILE) as f:
+    #     CONFIG = yaml.safe_load(f)
 
 
     DATA_DIR = os.path.join(CONFIG['DATA_DIR'], _DIR)
@@ -341,49 +333,49 @@ def vary_num_neg_samples():
     DOMAIN_DIMS = domain_dims
     print('Data shape', train_x_pos.shape)
 
-    for ns in [15]:
-
+    for es in [2,4,6,8,10,12,14,16,18,20]:
         process_all(
             CONFIG,
             _DIR,
             train_x_pos,
             train_x_neg,
             testing_dict,
-            ns
+            es
         )
     logger.info('-------------------')
 
+for _exec_dir in ['us_import','china_export','china_import','peru_export']:
 
-with open(CONFIG_FILE) as f:
-    CONFIG = yaml.safe_load(f)
+    with open(CONFIG_FILE) as f:
+        CONFIG = yaml.safe_load(f)
+    CONFIG['_DIR'] = _exec_dir
+    try:
+        log_file = CONFIG['log_file']
+        log_file = 'vary_embedding_size_1.log'
+    except:
+        log_file = 'analysis.log'
 
-try:
-    log_file = CONFIG['log_file']
-    log_file = 'vary_negative_samples.log'
-except:
-    log_file = 'analysis.log'
 
+    _DIR = CONFIG['_DIR']
+    logger = logging.getLogger('main')
+    logger.setLevel(logging.INFO)
+    OP_DIR = os.path.join(CONFIG['OP_DIR'], _DIR)
 
-_DIR = CONFIG['_DIR']
-logger = logging.getLogger('main')
-logger.setLevel(logging.INFO)
-OP_DIR = os.path.join(CONFIG['OP_DIR'], _DIR)
+    if not os.path.exists(CONFIG['OP_DIR']):
+        os.mkdir(CONFIG['OP_DIR'])
 
-if not os.path.exists(CONFIG['OP_DIR']):
-    os.mkdir(CONFIG['OP_DIR'])
+    if not os.path.exists(OP_DIR):
+        os.mkdir(OP_DIR)
 
-if not os.path.exists(OP_DIR):
-    os.mkdir(OP_DIR)
+    handler = logging.FileHandler(os.path.join(OP_DIR, log_file))
+    handler.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    logger.info(' Info start ')
+    logger.info('-------------------')
+    logger.info(CONFIG[_DIR])
+    logger.info('-------------------')
 
-handler = logging.FileHandler(os.path.join(OP_DIR, log_file))
-handler.setLevel(logging.INFO)
-logger.addHandler(handler)
-logger.info(' Info start ')
-logger.info('-------------------')
-logger.info(CONFIG[_DIR])
-logger.info('-------------------')
-
-vary_num_neg_samples()
+    vary_embedding_size()
 
 
 

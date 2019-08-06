@@ -142,20 +142,15 @@ def process_all(
         _DIR,
         train_x_pos,
         train_x_neg,
-        testing_dict,
-        predef_neg_samples = 5
+        testing_dict
 ):
     global logger
 
     logger.info('setting up number of negative samples ')
     logger.info(CONFIG[_DIR]['num_neg_samples'])
 
-
-    train_x_neg = train_x_neg[:,:predef_neg_samples,:]
     num_neg_samples = train_x_neg.shape[1]
-
-
-    CONFIG[_DIR]['num_neg_samples'] = predef_neg_samples
+    CONFIG[_DIR]['num_neg_samples'] = num_neg_samples
     model_obj = set_up_model(CONFIG, _DIR)
 
     _use_pretrained = CONFIG[_DIR]['use_pretrained']
@@ -288,7 +283,7 @@ def viz_tsne(data):
     plt.show()
 
 
-def vary_num_neg_samples():
+def vary_num_neg_type( _type=None):
     global embedding_dims
     global SAVE_DIR
     global _DIR
@@ -320,13 +315,43 @@ def vary_num_neg_samples():
     # ------------ #
     logger.info('-------------------')
     logger.info('DIR ' + _DIR)
+    if _type is None:
+        _type = 'normal'
 
+    logger.info(' Negative samplying type ' + _type)
 
-    train_x_pos, train_x_neg, _, _, domain_dims = data_fetcher.get_data_v3(
-        CONFIG['DATA_DIR'],
-        _DIR,
-        c=1
-    )
+    if _type == 'ape':
+
+        train_x_pos, train_x_neg, _, _, _, _, domain_dims = data_fetcher.get_data_v1(
+            CONFIG['DATA_DIR'],
+            _DIR,
+            c=1
+        )
+        k =3
+        _indices = np.arange(0, train_x_neg.shape[1], k)
+        train_x_neg = np.take(
+                    train_x_neg,
+                    _indices,
+                    axis=1
+                )
+    else:
+        # ensure same number of samples as APE
+
+        _, tmp, _, _, _, _, _ = data_fetcher.get_data_v1(
+            CONFIG['DATA_DIR'],
+            _DIR,
+            c=1
+        )
+        k = 3
+        _count = int(tmp.shape[1]/k)
+        print(_count)
+        train_x_pos, train_x_neg, _, _, domain_dims = data_fetcher.get_data_v3(
+            CONFIG['DATA_DIR'],
+            _DIR,
+            c=1
+        )
+        train_x_neg = train_x_neg[:,:_count,:]
+
 
     testing_dict = {}
 
@@ -341,16 +366,13 @@ def vary_num_neg_samples():
     DOMAIN_DIMS = domain_dims
     print('Data shape', train_x_pos.shape)
 
-    for ns in [15]:
-
-        process_all(
-            CONFIG,
-            _DIR,
-            train_x_pos,
-            train_x_neg,
-            testing_dict,
-            ns
-        )
+    process_all(
+        CONFIG,
+        _DIR,
+        train_x_pos,
+        train_x_neg,
+        testing_dict
+    )
     logger.info('-------------------')
 
 
@@ -359,7 +381,7 @@ with open(CONFIG_FILE) as f:
 
 try:
     log_file = CONFIG['log_file']
-    log_file = 'vary_negative_samples.log'
+    log_file = 'vary_negative_sampling_type.log'
 except:
     log_file = 'analysis.log'
 
@@ -375,7 +397,9 @@ if not os.path.exists(CONFIG['OP_DIR']):
 if not os.path.exists(OP_DIR):
     os.mkdir(OP_DIR)
 
-handler = logging.FileHandler(os.path.join(OP_DIR, log_file))
+handler = logging.FileHandler(
+    os.path.join(OP_DIR, log_file)
+)
 handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 logger.info(' Info start ')
@@ -383,7 +407,7 @@ logger.info('-------------------')
 logger.info(CONFIG[_DIR])
 logger.info('-------------------')
 
-vary_num_neg_samples()
+vary_num_neg_type( )
 
 
 

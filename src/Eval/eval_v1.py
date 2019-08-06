@@ -48,8 +48,12 @@ def precision_recall_curve(
 
         p = _numerator/len(candidates)
         r = _numerator/num_anomalies
+
+
         precision_vals.append(p)
         recall_vals.append(r)
+        if r == 1:
+            break
 
         # -------------------------- #
     return recall_vals, precision_vals

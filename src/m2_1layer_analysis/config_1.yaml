@@ -4,16 +4,16 @@
 'SAVE_DIR' : 'save_dir'
 'MODEL_NAME' : 'model_v1_2'
 'eval_type' : 1
-'log_file' : 'VaryBatchsize.log'
+'log_file' : 'TryAddNorm.log'
 'num_jobs' : 1
 'china_import':
-  'learning_rate' : 0.0005
+  'learning_rate' : 0.001
   'use_pretrained' : False
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
   'saved_model_file' : False
-  'num_epochs' : 25
+  'num_epochs' : 10
   'op_dims' : 12
   'batchsize': 128
   'num_neg_samples' : 15
@@ -25,7 +25,7 @@
   'use_bias' : True
   'saved_model_file' : False
   'num_epochs' : 25
-  'op_dims' : 8
+  'op_dims' : 10
   'batchsize': 128
   'num_neg_samples' : 15
 'us_import':
@@ -41,11 +41,11 @@
   'num_neg_samples' : 15
 'china_export':
   'learning_rate' : 0.0005
-  'use_pretrained' : True
+  'use_pretrained' : False
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
-  'saved_model_file' : 'frozen_model_v1_212_1563826937.pb'
+  'saved_model_file' : 'frozen_model_v1_212_1564515710.pb'
   'num_epochs' : 25
   'op_dims' : 12
   'batchsize': 128

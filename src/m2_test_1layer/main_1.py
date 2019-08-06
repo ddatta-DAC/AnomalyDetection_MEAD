@@ -23,9 +23,9 @@ sys.path.append('./../../.')
 
 
 try:
-    import tf_model_3 as tf_model
+    import src.m2_test_1layer.tf_model_3_withNorn_no_W as tf_model
 except:
-    from .src.m2_test_1layer import tf_model_3 as tf_model
+    from .src.m2_test_1layer import tf_model_3_withNorn_no_W as tf_model
 
 try:
     from src.Eval import eval_v1 as eval
@@ -131,7 +131,7 @@ def set_up_model(config, _dir):
         learning_rate=LR,
         num_neg_samples=config[_dir]['num_neg_samples']
     )
-    model_obj.set_l2_loss_flag(False)
+    model_obj.set_l2_loss_flag(True)
     model_obj.inference = False
     model_obj.build_model()
     return model_obj
@@ -466,13 +466,11 @@ with open(CONFIG_FILE) as f:
     CONFIG = yaml.safe_load(f)
 
 try:
-    log_file = CONFIG['log_file']
+    log_file = 'No_W_log_file.log'
 except:
     log_file = 'm2.log'
 
-log_file = 'm2.log'
-
-for _exec_dir in ['china_import']:
+for _exec_dir in ['china_import','peru_export','us_import','china_export']:
     _DIR = _exec_dir
     logger = logging.getLogger('main')
     logger.setLevel(logging.INFO)
@@ -488,4 +486,5 @@ for _exec_dir in ['china_import']:
     handler.setLevel(logging.INFO)
     logger.addHandler(handler)
     logger.info(' Info start ')
+    logger.info(' -----> ' + _DIR)
     main(_exec_dir)

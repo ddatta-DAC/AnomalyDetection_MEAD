@@ -355,6 +355,7 @@ with open(CONFIG_FILE) as f:
 
 try:
     log_file = CONFIG['log_file']
+    log_file = 'vary_batch_size.log'
 except:
     log_file = 'analysis.log'
 

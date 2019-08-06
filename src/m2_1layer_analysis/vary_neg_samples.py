@@ -143,15 +143,19 @@ def process_all(
         train_x_pos,
         train_x_neg,
         testing_dict,
-        batch_size = 64
+        predef_neg_samples = 5
 ):
     global logger
-    CONFIG[_DIR]['batchsize']= batch_size
-    logger.info('setting up batch size as ')
-    logger.info(CONFIG[_DIR]['batchsize'])
 
+    logger.info('setting up number of negative samples ')
+    logger.info(CONFIG[_DIR]['num_neg_samples'])
+
+
+    train_x_neg = train_x_neg[:,:predef_neg_samples,:]
     num_neg_samples = train_x_neg.shape[1]
-    CONFIG[_DIR]['num_neg_samples'] = num_neg_samples
+
+
+    CONFIG[_DIR]['num_neg_samples'] = predef_neg_samples
     model_obj = set_up_model(CONFIG, _DIR)
 
     _use_pretrained = CONFIG[_DIR]['use_pretrained']
@@ -284,7 +288,7 @@ def viz_tsne(data):
     plt.show()
 
 
-def vary_batch_size():
+def vary_num_neg_samples():
     global embedding_dims
     global SAVE_DIR
     global _DIR
@@ -337,7 +341,7 @@ def vary_batch_size():
     DOMAIN_DIMS = domain_dims
     print('Data shape', train_x_pos.shape)
 
-    for bs in [64,128,256,512,1024]:
+    for ns in [15]:
 
         process_all(
             CONFIG,
@@ -345,7 +349,7 @@ def vary_batch_size():
             train_x_pos,
             train_x_neg,
             testing_dict,
-            batch_size = bs
+            ns
         )
     logger.info('-------------------')
 
@@ -355,6 +359,7 @@ with open(CONFIG_FILE) as f:
 
 try:
     log_file = CONFIG['log_file']
+    log_file = 'vary_negative_samples.log'
 except:
     log_file = 'analysis.log'
 
@@ -378,7 +383,7 @@ logger.info('-------------------')
 logger.info(CONFIG[_DIR])
 logger.info('-------------------')
 
-vary_batch_size()
+vary_num_neg_samples()
 
 
 
