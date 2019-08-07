@@ -104,7 +104,7 @@ class model_ape_1:
             )
 
     def define_wbs(self):
-        print('Defining weights :: start')
+        # print('Defining weights :: start')
         self.W = [None] * self.num_layers
         self.B = [None] * self.num_layers
 
@@ -160,7 +160,7 @@ class model_ape_1:
                             self.B[l][i] = z
                         self.wb_names.append(prefix + name)
 
-            print('------')
+            # print('------')
 
             name = 'c'
             prefix = self.model_scope_name + '/' + wb_scope_name + '/'
@@ -178,7 +178,7 @@ class model_ape_1:
             else:
                 n = prefix + name + ':0'
                 self.c = self.restore_graph.get_tensor_by_name(n)
-            print(self.c)
+            # print(self.c)
 
             name = 'W_ij'
             prefix = self.model_scope_name + '/' + wb_scope_name + '/'
@@ -200,8 +200,8 @@ class model_ape_1:
                 n = prefix + name + ':0'
                 self.W_ij = self.restore_graph.get_tensor_by_name(n)
 
-            print(self.W_ij)
-            print('Defining weights :: end')
+            # print(self.W_ij)
+            # print('Defining weights :: end')
 
         return
 
@@ -217,7 +217,7 @@ class model_ape_1:
 
         self.restore = inference
         # Input indices
-        print('Building model : start ')
+        # print('Building model : start ')
         self.output_node_names = []
         self.model_scope_name = 'model'
 
@@ -272,8 +272,8 @@ class model_ape_1:
                 z_i = tf.squeeze(z_i, axis=1)
                 x_pos_inp[i] = z_i
 
-            print('Shape of inputs , after one hot encoding')
-            print([k.shape.as_list() for k in x_pos_inp])
+            # print('Shape of inputs , after one hot encoding')
+            # print([k.shape.as_list() for k in x_pos_inp])
 
             if inference is False:
                 x_neg_inp = tf.split(
@@ -292,11 +292,11 @@ class model_ape_1:
                     z_i = tf.squeeze(z_i, axis=2)
                     x_neg_inp[i] = z_i
 
-                print('Shape of inputs , after one hot encoding')
-                print(
-                    [k.shape.as_list() for k in x_neg_inp]
-                )
-            print('-----')
+                # print('Shape of inputs , after one hot encoding')
+                # print(
+                #     [k.shape.as_list() for k in x_neg_inp]
+                # )
+            # print('-----')
 
             x_pos_WXb = [None] * self.num_layers
 
@@ -314,7 +314,7 @@ class model_ape_1:
                         _wx_b = tf.add(_wx, self.B[l][i])
                     else:
                         _wx_b = _wx
-                    print(_wx_b)
+                    # print(_wx_b)
                     x_pos_WXb[l][i] = _wx_b
 
             # ---------------- #
@@ -330,7 +330,7 @@ class model_ape_1:
                             _x = x_neg_inp[i]
                         else:
                             _x = x_neg_WXb[l - 1][i]
-                        print(self.W[l][i])
+                        # print(self.W[l][i])
                         _wx = tf.einsum('ijk,kl -> ijl', _x, self.W[l][i])
 
                         if self.use_bias[l]:
@@ -346,12 +346,16 @@ class model_ape_1:
             for i in range(self.num_entities):
                 for j in range(i + 1, self.num_entities):
                     z = tf.reduce_sum(
-                        tf.multiply(x_pos_WXb[l][i],
-                                    x_pos_WXb[l][j]),
+                        tf.multiply(
+                            x_pos_WXb[l][i],
+                            x_pos_WXb[l][j]
+                        ),
                         axis=1,
-                        keepdims=True) * tf.sqrt(tf.square(self.W_ij[i][j]))
+                        keepdims=True
+                    )
+                    z = z * tf.square(self.W_ij[i][j])
                     _sum += z
-                    print(z)
+                    # print(z)
             P_e = tf.exp(_sum + self.c)  # 1st term in the loss equation
             self.score = P_e
 
@@ -367,7 +371,7 @@ class model_ape_1:
             neg_pair_dp = []
             for i in range(self.num_entities):
                 for j in range(i + 1, self.num_entities):
-                    print(x_neg_WXb[l][i])
+                    # print(x_neg_WXb[l][i])
                     _z1 = _wx = tf.einsum(
                         'ijk,ijk -> ijk',
                         x_neg_WXb[l][i],
@@ -376,9 +380,10 @@ class model_ape_1:
                     z = tf.reduce_sum(
                         _z1,
                         axis=-1,
-                        keepdims=True) * tf.sqrt(tf.square(self.W_ij[i][j]))
+                        keepdims=True)
+                    z = z * tf.square(self.W_ij[i][j])
                     neg_pair_dp.append(z)
-            print(neg_pair_dp)
+            # print(neg_pair_dp)
 
             z1 = tf.stack(neg_pair_dp, axis=2)
             z1 = tf.squeeze(z1, axis=-1)
@@ -389,8 +394,8 @@ class model_ape_1:
             # ---------------- #
 
             obj = tf.log(tf.sigmoid(tf.log(P_e) - self.term_2) + self.epsilon)
-            print('1', tf.sigmoid(tf.log(P_e)))
-            print('z3', z3)
+            # print('1', tf.sigmoid(tf.log(P_e)))
+            # print('z3', z3)
             z4 = tf.squeeze(self.term_4,axis=-1)
 
 
@@ -398,7 +403,7 @@ class model_ape_1:
             z5 = tf.reduce_sum(z4, axis=-1, keepdims=True)
             obj += z5
             self.obj = obj
-            print(self.obj)
+            # print(self.obj)
             self.optimizer = tf.train.AdamOptimizer(
                 learning_rate=self.learning_rate
             )
@@ -420,22 +425,20 @@ class model_ape_1:
         bs = self.batch_size
 
         num_batches = x_pos.shape[0] // bs
-        print('-----')
+        # print('-----')
 
         losses = []
         for e in range(self.num_epochs):
-            print('epoch', e + 1)
+            # print('epoch', e + 1)
             st = time.time()
             for _b in range(num_batches):
-                if _b % 100 == 0:
-                    print('Batch :', _b)
+                # if _b % 100 == 0:
+                #     # print('Batch :', _b)
                 _x_pos = x_pos[_b * bs: (_b + 1) * bs]
                 _x_neg = x_neg[_b * bs: (_b + 1) * bs]
                 _term_2 = term_2[_b * bs: (_b + 1) * bs]
                 _term_4 = term_4[_b * bs: (_b + 1) * bs,:,:]
-                # print(_term_2.shape)
-                # print(_term_4.shape)
-                # exit(1)
+
 
                 _, loss = self.sess.run(
                     [self.train_opt, self.obj],
@@ -446,16 +449,16 @@ class model_ape_1:
                         self.term_4: _term_4
                     }
                 )
-                if _b % 100 == 0:
-                    print('Loss :', np.mean(loss))
+                # if _b % 100 == 0:
+                #     # print('Loss :', np.mean(loss))
 
                 losses.append(np.mean(loss))
 
             ed = time.time()
-            print('Time elapsed: ', ed - st)
+            # print('Time elapsed: ', ed - st)
 
 
-        print('------------------------------->')
+        # print('------------------------------->')
         losses = np.array(losses) * -1
 
         fig_name = 'model_ape_1_' + str(time.time()) + '.png'
@@ -480,22 +483,27 @@ class model_ape_1:
             f.write(frozen_graph_def.SerializeToString())
         return
 
-    def inference(self,
-                  data,
-                  ):
+    def inference(
+            self,
+            data,
+            ):
         self.restore_model()
         output = None
         print(data.shape)
         res = []
-
+        bs = 512
+        num_batches = data.shape[0] // bs
+        print(' number of batches ....', num_batches)
         with tf.Session(graph=self.restore_graph) as sess:
-            output = sess.run(
-                self.score,
-                feed_dict={
-                    self.x_pos_inp: data,
-                })
-            res.extend(output)
-
-        res = np.array(output)
+            for _b in range(num_batches+1):
+                _data = data[_b * bs: (_b + 1) * bs]
+                output = sess.run(
+                    self.score,
+                    feed_dict={
+                        self.x_pos_inp: _data,
+                    })
+                res.extend(output)
+        print(len(res))
+        res = np.array(res)
         return res
 

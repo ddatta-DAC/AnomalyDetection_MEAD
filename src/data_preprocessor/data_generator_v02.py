@@ -35,6 +35,12 @@ def get_regex(_type):
         if _type == 'test':
             return '*201[7,8]*.csv'
 
+    if DIR == 'china_export':
+        if _type == 'train':
+            return '*0[1-4]*2015*.csv'
+        if _type == 'test':
+            return '*0[5-6]*2015*.csv'
+
     return '*.csv'
 
 
@@ -423,15 +429,16 @@ def get_neg_sample_ape(_k, column_id, column_name, ref_df, column_valid_values, 
     global term_4_col
     global term_2_col
 
-    new_row = pd.Series(orig_row, copy=True)
+
     Pid_val = orig_row[id_col]
     while True:
+        new_row = pd.Series(orig_row, copy=True)
         _random = random.sample(
             column_valid_values[column_name], 1
         )[0]
         new_row[column_name] = _random
         if validate(new_row, ref_df):
-            new_row = pd.Series(orig_row, copy=True)
+
             new_row[ns_id_col] = int('10' + str(_k) + str(column_id) + str(Pid_val) + '01')
             new_row[term_4_col] = np.log(P_A[column_id][_random])
             _tmp = 0
@@ -497,7 +504,7 @@ def create_negative_samples_ape():
     global ns_id_col
     global num_neg_samples_ape
 
-    num_chunks = 25
+    num_chunks = 40
 
     train_data_file = os.path.join(save_dir, 'train_data.csv')
 
@@ -684,6 +691,7 @@ def create_ape_model_data():
 
         vals_n = np.array(_tmp.values)
         vals_p = list(row.values)
+
         matrix_neg.append(vals_n)
         matrix_pos.append(vals_p)
         term_2.append(_term_2)
@@ -692,6 +700,9 @@ def create_ape_model_data():
 
     matrix_pos = np.array(matrix_pos)
     matrix_neg = np.array(matrix_neg)
+
+    matrix_pos = matrix_pos.astype(np.int32)
+    matrix_neg = matrix_neg.astype(np.int32)
 
     term_2 = np.array(term_2)
     term_4 = np.array(term_4)
@@ -886,7 +897,7 @@ def create_negative_samples_v1():
     global ns_id_col
     global num_neg_samples_v1
 
-    num_chunks = 25
+    num_chunks = 40
     train_data_file = os.path.join(save_dir, 'train_data.csv')
 
     train_df = pd.read_csv(

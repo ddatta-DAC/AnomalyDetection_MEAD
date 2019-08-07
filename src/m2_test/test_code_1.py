@@ -353,7 +353,7 @@ except:
     log_file = 'm1.log'
 
 
-for _exec_dir in ['peru_export', 'china_import', 'us_import'] :
+for _exec_dir in ['peru_export'] :
 
     _DIR = _exec_dir
     logger = logging.getLogger('main')
@@ -371,5 +371,5 @@ for _exec_dir in ['peru_export', 'china_import', 'us_import'] :
     logger.addHandler(handler)
     logger.info(' Info start ')
 
-    for _ablation_flag in [True, False] :
+    for _ablation_flag in [False, True] :
         main(_exec_dir , _ablation_flag )

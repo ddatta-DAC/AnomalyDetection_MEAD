@@ -146,7 +146,8 @@ def setup():
 
     logger = logging.getLogger('main')
     logger.setLevel(logging.INFO)
-    handler = logging.FileHandler(os.path.join( OP_DIR, 'ape.log'))
+    log_file= os.path.join(OP_DIR, config['log_file'])
+    handler = logging.FileHandler(log_file)
     handler.setLevel(logging.INFO)
     logger.addHandler(handler)
     logger.info(' Info start ')
@@ -200,7 +201,7 @@ def main():
         inp_dims=inp_dims,
         neg_samples=neg_samples,
         batch_size=config[_DIR]['batch_size'],
-        num_epochs=config[_DIR]['num_epocs'],
+        num_epochs=config[_DIR]['num_epochs'],
         lr=config[_DIR]['learning_rate'],
         chkpt_dir=checkpoint_dir
     )
@@ -226,7 +227,23 @@ def main():
 
     # test for c = 1, 2, 3
 
+    bounds = []
+    training_pos_scores = model_obj.inference(
+        train_x_pos
+    )
+    training_pos_scores = [_[0] for _ in training_pos_scores]
+
+    train_noise = np.reshape(train_x_neg, [-1, train_x_pos.shape[-1]])
+    training_noise_scores = model_obj.inference(
+        train_noise
+    )
+    training_noise_scores = [_[0] for _ in training_noise_scores]
+
+    bounds.append(min(training_noise_scores))
+    bounds.append(max(training_pos_scores))
+
     for c in range(1,3+1):
+
         _, _, _, _, test_pos, test_anomaly, _ = data_fetcher.get_data_v1(
             DATA_DIR,
             _DIR,
@@ -254,20 +271,9 @@ def main():
         ])
 
         # ---------- #
-        bounds = []
-        training_pos_scores = model_obj.inference(
-            train_x_pos
-        )
-        training_pos_scores = [_[0] for _ in training_pos_scores]
 
-        train_noise = np.reshape(train_x_neg,[-1,train_x_pos.shape[-1]])
-        training_noise_scores = model_obj.inference(
-            train_noise
-        )
-        training_noise_scores = [_[0] for _ in training_noise_scores]
 
-        bounds.append(min(training_noise_scores))
-        bounds.append(max(training_pos_scores))
+
         # ---------- #
 
         print('Length of test data',test_data_x.shape)
@@ -304,6 +310,12 @@ def main():
             anomaly_id_list=test_anomaly_ids,
             bounds = bounds
         )
+
+        recall_str = ','.join([str(_) for _ in recall])
+        precision_str = ','.join([str(_) for _ in precison])
+
+        logger.info(precision_str)
+        logger.info(recall_str)
 
         _auc = auc(recall, precison)
         logger.info('c=' + str(c))

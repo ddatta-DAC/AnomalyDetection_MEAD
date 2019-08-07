@@ -321,17 +321,17 @@ class model:
             self.joint_emb_op_arr = emb_op_pos
 
             # This should have shape : [ ? , num_domains, emb_dimensions ]
-            self.joint_emb_op = tf.stack(emb_op_pos, axis=1)
+            # self.joint_emb_op = tf.stack(emb_op_pos, axis=1)
 
             # This should have shape : [ ? , num_domains*emb_dimensions ]
-            self.concat_emb_op = tf.concat(emb_op_pos, axis=1)
+            # self.concat_emb_op = tf.concat(emb_op_pos, axis=1)
 
             # Calculate the mean embedding of the record
-            self.mean_emb_op = tf.reduce_mean(
-                self.joint_emb_op,
-                axis=1,
-                keepdims=False
-            )
+            # self.mean_emb_op = tf.reduce_mean(
+            #     self.joint_emb_op,
+            #     axis=1,
+            #     keepdims=False
+            # )
 
             '''
             Calculate weighted norm
@@ -347,7 +347,7 @@ class model:
             # small epsilon to avoid any sort of underflows
             _epsilon = tf.constant(math.pow(10.0, -7.0))
 
-            self.pairwise_ang_dist = self.calculate_angular_sim(emb_op_pos)
+            # self.pairwise_ang_dist = self.calculate_angular_sim(emb_op_pos)
 
             if self.inference is False:
                 self.neg_sample_optimization()
@@ -367,30 +367,30 @@ class model:
             print(norm_loss.shape)
 
             self.loss_2 = norm_loss
-            self.loss =  self.loss_1 +  self.loss_2 + self.loss_3
+            self.loss =  self.loss_2
 
             print(' shape of loss -->> ', self.loss.shape)
 
-            '''
+
             # L2 regularization of weights in embedding layer
-            regularizer_beta = tf.constant(math.pow(10, -10))
-            for _W in self.W:
-                regularizer = [regularizer_beta * tf.nn.l2_loss(_) for _ in _W]
-                for _ in regularizer:
-                    self.loss += _
-            for _B in self.b:
-                regularizer = [regularizer_beta * tf.nn.l2_loss(_) for _ in _B]
-                for _ in regularizer:
-                    self.loss += _
+            # regularizer_beta = tf.constant(math.pow(10, -10))
+            # for _W in self.W:
+            #     regularizer = [regularizer_beta * tf.nn.l2_loss(_) for _ in _W]
+            #     for _ in regularizer:
+            #         self.loss += _
+            # for _B in self.b:
+            #     regularizer = [regularizer_beta * tf.nn.l2_loss(_) for _ in _B]
+            #     for _ in regularizer:
+            #         self.loss += _
+            #
+            # print(' shape of loss -->> ', self.loss.shape)
 
-            print(' shape of loss -->> ', self.loss.shape)
-            '''
 
 
             # print('Loss shape', self.loss.shape)
             tf.summary.scalar('loss', tf.reduce_mean(self.loss))
-            tf.summary.scalar('loss_1', tf.reduce_mean(self.loss_1))
-            tf.summary.scalar('loss_2', tf.reduce_mean(self.loss_2))
+            # tf.summary.scalar('loss_1', tf.reduce_mean(self.loss_1))
+            # tf.summary.scalar('loss_2', tf.reduce_mean(self.loss_2))
 
             self._add_var_summaries()
             self.optimizer = tf.train.AdamOptimizer(
@@ -464,8 +464,8 @@ class model:
         x_neg_inp_arr = [tf.squeeze(_, axis=1) for _ in x_neg_inp_arr]
 
         r_b_neg = []
-        ang_dist_neg = []
-        and_dist_pos = self.pairwise_ang_dist
+        # ang_dist_neg = []
+        # and_dist_pos = self.pairwise_ang_dist
 
         for _neg in range(self.num_neg_samples):
             x_inp_neg = tf.split(
@@ -482,13 +482,13 @@ class model:
             )
             r_b_neg.append(r_b)
 
-            ad_n = self.calculate_angular_sim(emb_op_n)
-            print(ad_n.shape)
-            ad_n = tf.add(
-                and_dist_pos,
-                - ad_n
-            )
-            ang_dist_neg.append(ad_n)
+            # ad_n = self.calculate_angular_sim(emb_op_n)
+            # print(ad_n.shape)
+            # ad_n = tf.add(
+            #     and_dist_pos,
+            #     - ad_n
+            # )
+            # ang_dist_neg.append(ad_n)
 
             # emb_op_n = tf.stack(emb_op_n,axis=1)
             # emb_op_neg.append(emb_op_n)
@@ -505,39 +505,40 @@ class model:
 
         print('r_b_neg shape ', r_b_neg.shape)
 
-        ang_dist_neg = tf.stack(
-            ang_dist_neg,
-            axis=-1
-        )
-
-        ang_dist_neg = tf.squeeze(
-            ang_dist_neg,
-            axis=1
-        )
-
-        print('ang_dist_neg shape', ang_dist_neg.shape)
+        # ang_dist_neg = tf.stack(
+        #     ang_dist_neg,
+        #     axis=-1
+        # )
+        #
+        # ang_dist_neg = tf.squeeze(
+        #     ang_dist_neg,
+        #     axis=1
+        # )
+        #
+        # print('ang_dist_neg shape', ang_dist_neg.shape)
 
         # part_1 = tf.square(self.pairwise_ang_dist)
-        part_2 = tf.reduce_mean(
-            ang_dist_neg,
-            axis=-1,
-            keepdims=True
-        )
-
-
-        self.loss_1 = part_2
+        # part_2 = tf.reduce_mean(
+        #     ang_dist_neg,
+        #     axis=-1,
+        #     keepdims=True
+        # )
+        #
+        #
+        # self.loss_1 = part_2
 
         # calculate loss
-        loss_3 = tf.log(self.r_b)
-        _tmp = tf.log(r_b_neg)
-        _tmp = tf.reduce_sum(
-            _tmp,
-            axis=-1,
-            keepdims=True
-        )
+        # loss_3 = tf.log(self.r_b)
+        # _tmp = tf.log(r_b_neg)
+        # _tmp = tf.reduce_sum(
+        #     _tmp,
+        #     axis=-1,
+        #     keepdims=True
+        # )
+        #
+        # self.loss_3 = -tf.add(loss_3, _tmp)
+        # tf.summary.scalar('loss_3', tf.reduce_mean(self.loss_3))
 
-        self.loss_3 = -tf.add(loss_3, _tmp)
-        tf.summary.scalar('loss_3', tf.reduce_mean(self.loss_3))
         return
 
     def set_pretrained_model_file(self, f_path):
@@ -599,16 +600,16 @@ class model:
                 if _b == 0:
                     print(_x_pos.shape)
 
-                _, summary, loss1, loss2, loss3,  loss = self.sess.run(
-                    [self.train_opt, self.summary, self.loss_1, self.loss_2, self.loss_3, self.loss],
+                _, summary,  loss = self.sess.run(
+                    [self.train_opt, self.summary,self.loss],
                     feed_dict={
                         self.x_pos_inp: _x_pos,
                         self.x_neg_inp: _x_neg
                     }
                 )
-
-                _loss_3.append(np.mean(loss3))
-                _loss_1.append(np.mean(loss1))
+                #
+                # _loss_3.append(np.mean(loss3))
+                # _loss_1.append(np.mean(loss1))
                 batch_loss = np.mean(loss)
                 losses.append(batch_loss)
 
@@ -626,27 +627,27 @@ class model:
 
 
 
-            cur_epoch_loss_1 = np.mean(_loss_1)
-            cur_epoch_loss_3 = np.mean(_loss_3)
-            print(' >>> ', cur_epoch_loss_1, cur_epoch_loss_3)
+            # cur_epoch_loss_1 = np.mean(_loss_1)
+            # cur_epoch_loss_3 = np.mean(_loss_3)
+            # print(' >>> ', cur_epoch_loss_1, cur_epoch_loss_3)
 
 
 
-            if e > 0:
-                delta = abs(cur_epoch_loss_3) - abs(prev_epoch_loss_3)
-                if delta < delta_limit and early_cutoff is False :
-                    early_cutoff = True
-
-            '''
-            check the direction of pairwise angular distance
-            '''
-            if early_cutoff :
-               if cur_epoch_loss_1 > prev_epoch_loss_1 :
-                   print(' breaking due to early cut off ')
-                   break
-
-            prev_epoch_loss_3 = cur_epoch_loss_3
-            prev_epoch_loss_1 = cur_epoch_loss_1
+            # if e > 0:
+            #     delta = abs(cur_epoch_loss_3) - abs(prev_epoch_loss_3)
+            #     if delta < delta_limit and early_cutoff is False :
+            #         early_cutoff = True
+            #
+            # '''
+            # check the direction of pairwise angular distance
+            # '''
+            # if early_cutoff :
+            #    if cur_epoch_loss_1 > prev_epoch_loss_1 :
+            #        print(' breaking due to early cut off ')
+            #        break
+            #
+            # prev_epoch_loss_3 = cur_epoch_loss_3
+            # prev_epoch_loss_1 = cur_epoch_loss_1
 
 
             if Check_Save_Prev is True:
