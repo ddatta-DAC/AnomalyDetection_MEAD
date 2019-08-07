@@ -4,3 +4,4 @@ generated_data/**
 *events.out.tfevents.*.*gi
 __pycache__/
 /src/**/summary
+/src/stupidBaseline_1/generated_data/**
