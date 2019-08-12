@@ -1,4 +1,4 @@
-'DATA_DIR': '../../generated_data'
+'DATA_DIR': 'generated_data'
 '_DIR' : 'us_import'
 'OP_DIR' : 'output'
 'SAVE_DIR' : 'save_dir'
@@ -30,11 +30,11 @@
   'num_neg_samples' : 15
 'us_import':
   'learning_rate' : 0.0005
-  'use_pretrained' : False
+  'use_pretrained' : True
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
-  'saved_model_file' : False
+  'saved_model_file' : 'frozen_model_v1_212_1565281850.pb'
   'num_epochs' : 25
   'op_dims' : 12
   'batchsize': 128
