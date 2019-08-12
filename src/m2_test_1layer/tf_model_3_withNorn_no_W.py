@@ -368,7 +368,7 @@ class model:
 
             self.loss_2 = norm_loss
 
-            self.loss =  self.loss_3 
+            self.loss =  self.loss_3
             # print(' shape of loss -->> ', self.loss.shape)
             self._enable_l2_loss = False
             # L2 regularization of weights in embedding layer

@@ -23,9 +23,9 @@ sys.path.append('./../../.')
 
 
 try:
-    import src.m2_test_1layer.tf_model_3_withNorn_no_W as tf_model
+    import src.m2_test_1layer.tf_model_3_withNorn as tf_model
 except:
-    from .src.m2_test_1layer import tf_model_3_withNorn_no_W as tf_model
+    from .src.m2_test_1layer import tf_model_3_withNorn as tf_model
 
 try:
     from src.Eval import eval_v1 as eval
