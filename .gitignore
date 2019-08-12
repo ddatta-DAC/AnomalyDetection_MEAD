@@ -4,5 +4,9 @@ generated_data/**
 *events.out.tfevents.*.*gi
 __pycache__/
 /src/**/summary
+/src/**/summary_data
+/src/**/summary_data/*
 wwf_data_v1
 **/.ipynb_checkpoints/**
+/notebooks/CaseStudies/generated_data/
+/notebooks/.ipynb_checkpoints/
