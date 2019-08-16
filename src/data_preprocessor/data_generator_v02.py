@@ -29,6 +29,12 @@ def get_regex(_type):
         if _type == 'test':
             return '*0[1-7]*2016*.csv'
 
+    if DIR == 'china_import2':
+        if _type == 'train':
+            return '*0[1-9]*2015*.csv'
+        if _type == 'test':
+            return '*0[1-6]*2016*.csv'
+
     if DIR == 'peru_export':
         if _type == 'train':
             return '*201[5-6]*.csv'

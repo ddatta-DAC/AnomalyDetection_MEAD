@@ -23,9 +23,10 @@ sys.path.append('./../../.')
 
 
 try:
-    import src.m2_test_1layer.tf_model_3_withNorn_no_W as tf_model
+    import src.m2_test_1layer.tf_model_3_withNorm as tf_model
 except:
-    from .src.m2_test_1layer import tf_model_3_withNorn_no_W as tf_model
+    from .src.m2_test_1layer import tf_model_3_withNorm as tf_model
+
 
 try:
     from src.Eval import eval_v1 as eval
@@ -393,7 +394,7 @@ def viz_tsne(data):
     plt.show()
 
 
-def main(exec_dir=None):
+def main():
     global embedding_dims
     global SAVE_DIR
     global _DIR
@@ -404,12 +405,7 @@ def main(exec_dir=None):
     global DOMAIN_DIMS
     global logger
 
-    with open(CONFIG_FILE) as f:
-        CONFIG = yaml.safe_load(f)
-
-    _DIR = exec_dir
     DATA_DIR = os.path.join(CONFIG['DATA_DIR'], _DIR)
-
     setup_general_config()
 
     if not os.path.exists(os.path.join(SAVE_DIR, 'checkpoints')):
@@ -424,7 +420,8 @@ def main(exec_dir=None):
 
     # ------------ #
     logger.info('-------------------')
-    logger.info('DIR ' + exec_dir)
+
+    logger.info('DIR ' + _DIR)
 
 
     train_x_pos, train_x_neg, _, _, domain_dims = data_fetcher.get_data_v3(
@@ -465,26 +462,22 @@ def main(exec_dir=None):
 with open(CONFIG_FILE) as f:
     CONFIG = yaml.safe_load(f)
 
-try:
-    log_file = 'No_W_log_file.log'
-except:
-    log_file = 'm2.log'
+log_file = 'results_v2.log'
 
-for _exec_dir in ['china_import','peru_export','us_import','china_export']:
-    _DIR = _exec_dir
-    logger = logging.getLogger('main')
-    logger.setLevel(logging.INFO)
-    OP_DIR = os.path.join(CONFIG['OP_DIR'], _DIR)
+_DIR = CONFIG['_DIR']
+logger = logging.getLogger('main')
+logger.setLevel(logging.INFO)
+OP_DIR = os.path.join(CONFIG['OP_DIR'], _DIR)
 
-    if not os.path.exists(CONFIG['OP_DIR']):
-        os.mkdir(CONFIG['OP_DIR'])
+if not os.path.exists(CONFIG['OP_DIR']):
+    os.mkdir(CONFIG['OP_DIR'])
 
-    if not os.path.exists(OP_DIR):
-        os.mkdir(OP_DIR)
+if not os.path.exists(OP_DIR):
+    os.mkdir(OP_DIR)
 
-    handler = logging.FileHandler(os.path.join(OP_DIR, log_file))
-    handler.setLevel(logging.INFO)
-    logger.addHandler(handler)
-    logger.info(' Info start ')
-    logger.info(' -----> ' + _DIR)
-    main(_exec_dir)
+handler = logging.FileHandler(os.path.join(OP_DIR, log_file))
+handler.setLevel(logging.INFO)
+logger.addHandler(handler)
+logger.info(' Info start ')
+logger.info(' -----> ' + _DIR)
+main()

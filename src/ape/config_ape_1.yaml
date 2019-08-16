@@ -15,8 +15,8 @@
   'embed_size': 8
   'num_epochs': 10
   'batch_size': 128
-  'saved_model_file': 'model_ape_10_k_21_frozen.pb'
-  'use_pretrained': False
+  'saved_model_file': 'model_ape_8_k_21_frozen.pb'
+  'use_pretrained': True
   'learning_rate': 0.001
 'us_import':
   'embed_size': 10
@@ -29,6 +29,6 @@
   'embed_size': 12
   'num_epochs': 12
   'batch_size': 128
-  'saved_model_file' : 'model_ape_12_k_27_frozen.pb'
-  'use_pretrained': False
+  'saved_model_file' : 'model_ape_12_k_24_frozen.pb'
+  'use_pretrained': True
   'learning_rate': 0.001

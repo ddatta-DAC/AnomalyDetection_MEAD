@@ -1,5 +1,5 @@
 'save_dir': './../../generated_data'
-'_DIR': 'china_export'
+'_DIR': 'china_import2'
 'us_import':
   'use_cols':
     - 'PanjivaRecordID'
@@ -66,3 +66,22 @@
   'column_value_filters': False
   'num_neg_samples_ape': 3
   'low_freq_bound': 5
+'china_import2':
+  'use_cols':
+    - 'PanjivaRecordID'
+    - 'ConsigneePanjivaID'
+    - 'ShipmentOrigin'
+    - 'Province'
+    - 'CountryOfSale'
+    - 'TransportMethod'
+    - 'AdminRegion'
+    - 'TradeType'
+    - 'hscode_6'
+  'num_neg_samples_v1': 15
+  'column_value_filters':
+    'ShipmentOrigin':
+      - 'Countries (reg.) un-known'
+    'CountryOfSale':
+      - 'Countries (reg.) un-known'
+  'num_neg_samples_ape': 3
+  'low_freq_bound': 3
