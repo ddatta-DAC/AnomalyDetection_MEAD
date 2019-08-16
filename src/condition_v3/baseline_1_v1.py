@@ -37,6 +37,11 @@ except:
     from .src.data_fetcher import data_fetcher
 
 try:
+    import MI_attributePair
+except:
+    from . import MI_attributePair
+
+try:
     import ad_tree_v1
 except:
     from . import ad_tree_v1
@@ -60,7 +65,7 @@ OP_DIR = None
 config = None
 # Algorithm thresholds
 MI_THRESHOLD = 0.1
-ALPHA = 0.1
+ALPHA = 0.075
 DISCARD_0 = True
 logger = None
 
@@ -174,50 +179,54 @@ def get_MI_attrSetPair(
         s2,
         obj_adtree
 ):
-    if len(s1) > 1 or len(s2) > 1:
-        return 1
-
-    if len(s1) == 1 or len(s2) == 1:
-        _x = np.reshape(data_x[:, s1], -1)
-        _y = np.reshape(data_x[:, s2], -1)
-        return calc_MI(x=_x, y=_y)
-
-    def _join(row, indices):
-        r = '_'.join([str(row[i]) for i in indices])
-        return r
-
-    mask = np.random.choice([False, True], len(data_x), p=[0.8, 0.2])
-    data_x = data_x[mask]
-
-    _idx = list(s1)
-    _idx.extend(s2)
-    _atr = list(s1)
-    _atr.extend(s2)
-    _dict = {}
-
-    for a in _atr:
-        _dict[a] = set(data_x[:, [a]])
-
-    _tmp_df = pd.DataFrame(
-        data=data_x,
-        copy=True
+    return MI_attributePair.get_MI_attrSetPair( data_x,
+        s1,
+        s2,
+        obj_adtree
     )
-    _tmp_df = _tmp_df[_atr]
 
-    _tmp_df['x'] = None
-    _tmp_df['y'] = None
-    _tmp_df['x'] = _tmp_df.apply(
-        _join,
-        axis=1,
-        args=(s1,)
-    )
-    _tmp_df['y'] = _tmp_df.apply(
-        _join,
-        axis=1,
-        args=(s2,)
-    )
-    mi = calc_MI(_tmp_df['x'], _tmp_df['y'])
-    return mi
+    #
+    # if len(s1) == 1 or len(s2) == 1:
+    #     _x = np.reshape(data_x[:, s1], -1)
+    #     _y = np.reshape(data_x[:, s2], -1)
+    #     return calc_MI(x=_x, y=_y)
+    #
+    # def _join(row, indices):
+    #     r = '_'.join([str(row[i]) for i in indices])
+    #     return r
+    #
+    # mask = np.random.choice([False, True], len(data_x), p=[0.8, 0.2])
+    # data_x = data_x[mask]
+    #
+    # _idx = list(s1)
+    # _idx.extend(s2)
+    # _atr = list(s1)
+    # _atr.extend(s2)
+    # _dict = {}
+    #
+    # for a in _atr:
+    #     _dict[a] = set(data_x[:, [a]])
+    #
+    # _tmp_df = pd.DataFrame(
+    #     data=data_x,
+    #     copy=True
+    # )
+    # _tmp_df = _tmp_df[_atr]
+    #
+    # _tmp_df['x'] = None
+    # _tmp_df['y'] = None
+    # _tmp_df['x'] = _tmp_df.apply(
+    #     _join,
+    #     axis=1,
+    #     args=(s1,)
+    # )
+    # _tmp_df['y'] = _tmp_df.apply(
+    #     _join,
+    #     axis=1,
+    #     args=(s2,)
+    # )
+    # mi = calc_MI(_tmp_df['x'], _tmp_df['y'])
+    # return mi
 
 
 # MI = Sum ( P_(x)(y) log( P_(x)(y)/ P_(x)*P_(y) )
@@ -242,7 +251,7 @@ def get_attribute_sets(
     op_file_name = 'set_pairs_' + str(k) + '.pkl'
     op_file_path = os.path.join(SAVE_DIR, op_file_name)
 
-    if os.path.exists(op_file_path) and False :
+    if os.path.exists(op_file_path) :
         with open(op_file_path, 'rb') as fh:
             set_pairs = pickle.load(fh)
         return set_pairs
@@ -259,10 +268,12 @@ def get_attribute_sets(
         _tmp = list(itertools.combinations(attribute_list, _k))
         sets.extend(_tmp)
 
+    sets = [sorted(_) for _ in sets]
     '''
     Check if 2 sets have MI > 0.1 and are mutually exclusive
     TODO : implement concurrency
     '''
+
 
     set_pairs = []
     for i in range(len(sets)):
@@ -431,7 +442,7 @@ def process(_dir=None):
     t2 = time.time()
     train_time = t2-t1
     logger.info('train_time taken ' + str(train_time))
-
+    print(train_time)
     print(' Number of attribute set pairs ', len(attribute_set_pairs))
 
     ''' Start of test '''

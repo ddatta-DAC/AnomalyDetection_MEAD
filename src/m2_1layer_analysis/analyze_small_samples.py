@@ -13,6 +13,7 @@ from sklearn.metrics import auc
 import logging
 import logging.handlers
 import tensorflow as tf
+import pandas as pd
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
@@ -25,7 +26,7 @@ sys.path.append('./../../.')
 try:
     import src.m2_test_1layer.tf_model_3_withNorm as tf_model
 except:
-    from .src.m2_test_1layer import tf_model_3_withNorm as tf_model
+    from .src.tf_model_3_withNorm import tf_model_3 as tf_model
 
 try:
     from src.Eval import eval_v1 as eval
@@ -131,7 +132,7 @@ def set_up_model(config, _dir):
         learning_rate=LR,
         num_neg_samples=config[_dir]['num_neg_samples']
     )
-    model_obj.set_l2_loss_flag(True)
+    model_obj.set_l2_loss_flag(False)
     model_obj.inference = False
     model_obj.build_model()
     return model_obj
@@ -175,148 +176,11 @@ def process_all(
             train_x_neg
         )
 
-    # 3 test cases by value of c
-    for _c, test_data_item in testing_dict.items():
-        print('----->', _c)
-
-        logger.info(' >> c = ' + str(_c))
-        test_pos = test_data_item[0]
-        test_anomaly = test_data_item[1]
-
-        test_normal_ids = test_pos[0]
-        test_anomaly_ids = test_anomaly[0]
-        test_ids = list(np.hstack(
-            [test_normal_ids,
-             test_anomaly_ids]
-        ))
-
-        print(' Len of test_ids ', len(test_ids))
-        test_normal_data = test_pos[1]
-        test_anomaly_data = test_anomaly[1]
-        test_data_x = np.vstack([
-            test_normal_data,
-            test_anomaly_data
-        ])
-
-        print('Length of test data', test_data_x.shape)
-        res = model_obj.get_event_score(test_data_x)
-        print('Length of results ', len(res))
-
-        test_ids = list(test_ids)
-
-        bounds = []
-        training_pos_scores = model_obj.get_event_score(
-            train_x_pos
-        )
-        training_pos_scores = [_[0] for _ in training_pos_scores]
-
-        train_noise = np.reshape(train_x_neg, [-1, train_x_pos.shape[-1]])
-        training_noise_scores = model_obj.get_event_score(
-            train_noise
-        )
-        training_noise_scores = [_[0] for _ in training_noise_scores]
-
-        bounds.append(min(training_noise_scores))
-        bounds.append(max(training_pos_scores))
-
-        print('Length of results ', len(res))
-
-        res = list(res)
-        _id_score_dict = {
-            id: _res for id, _res in zip(test_ids, res)
-        }
-
-        '''
-        sort by ascending 
-        since lower likelihood means anomalous
-        '''
-        tmp = sorted(
-            _id_score_dict.items(),
-            key=operator.itemgetter(1)
-        )
-        sorted_id_score_dict = OrderedDict()
-
-        for e in tmp:
-            sorted_id_score_dict[e[0]] = e[1][0]
-
-        recall, precison = eval.precision_recall_curve(
-            sorted_id_score_dict,
-            anomaly_id_list=test_anomaly_ids,
-            bounds=bounds
-        )
-
-        _auc = auc(recall, precison)
-        logger.info('AUC')
-        logger.info(str(_auc))
-
-        print('--------------------------')
-
-
-def process(
-        CONFIG,
-        _DIR,
-        train_x_pos,
-        train_x_neg,
-        test_pos,
-        test_anomaly
-
-):
-    global logger
-    num_neg_samples = train_x_neg.shape[1]
-    CONFIG[_DIR]['num_neg_samples'] = num_neg_samples
-    model_obj = set_up_model(CONFIG, _DIR)
-    _use_pretrained = CONFIG[_DIR]['use_pretrained']
-
-    if _use_pretrained is True:
-        saved_file_path = None
-        pretrained_file = CONFIG[_DIR]['saved_model_file']
-
-        print('Pretrained File :', pretrained_file)
-        saved_file_path = os.path.join(
-            SAVE_DIR,
-            'checkpoints',
-            pretrained_file
-        )
-        if saved_file_path is not None:
-            model_obj.set_pretrained_model_file(saved_file_path)
-        else:
-            model_obj.train_model(
-                train_x_pos,
-                train_x_neg
-            )
-
-    elif _use_pretrained is False:
-        model_obj.train_model(
-            train_x_pos,
-            train_x_neg
-        )
-
-    test_normal_ids = test_pos[0]
-    test_anomaly_ids = test_anomaly[0]
-    test_ids = list(np.hstack(
-        [test_normal_ids,
-         test_anomaly_ids]
-    ))
-    print(' Len of test_ids ', len(test_ids))
-    test_normal_data = test_pos[1]
-    test_anomaly_data = test_anomaly[1]
-    test_data_x = np.vstack([
-        test_normal_data,
-        test_anomaly_data
-    ])
-
-    print('Length of test data', test_data_x.shape)
-    res = model_obj.get_event_score(test_data_x)
-    print('Length of results ', len(res))
-
-    test_ids = list(test_ids)
-
     bounds = []
     training_pos_scores = model_obj.get_event_score(
         train_x_pos
     )
     training_pos_scores = [_[0] for _ in training_pos_scores]
-
     train_noise = np.reshape(train_x_neg, [-1, train_x_pos.shape[-1]])
     training_noise_scores = model_obj.get_event_score(
         train_noise
@@ -326,74 +190,85 @@ def process(
     bounds.append(min(training_noise_scores))
     bounds.append(max(training_pos_scores))
 
-    print('Length of results ', len(res))
 
-    res = list(res)
-    _id_score_dict = {
-        id: _res for id, _res in zip(test_ids, res)
-    }
+    for _c, test_data_item in testing_dict.items():
+        print('----->', _c)
 
-    '''
-    sort by ascending 
-    since lower likelihood means anomalous
-    '''
-    tmp = sorted(
-        _id_score_dict.items(),
-        key=operator.itemgetter(1)
-    )
-    sorted_id_score_dict = OrderedDict()
+        logger.info(' >> c = ' + str(_c))
+        for s, c_dict in test_data_item.items():
+            test_pos = c_dict[0]
+            test_anomaly = c_dict[1]
 
-    for e in tmp:
-        sorted_id_score_dict[e[0]] = e[1][0]
+            test_normal_ids = test_pos[0]
+            test_anomaly_ids = test_anomaly[0]
+            test_ids = list(np.hstack(
+                [test_normal_ids,
+                 test_anomaly_ids]
+            ))
 
-    recall, precison = eval.precision_recall_curve(
-        sorted_id_score_dict,
-        anomaly_id_list=test_anomaly_ids,
-        bounds=bounds
-    )
+            print(' Len of test_ids ', len(test_ids))
+            test_normal_data = test_pos[1]
+            test_anomaly_data = test_anomaly[1]
+            test_data_x = np.vstack([
+                test_normal_data,
+                test_anomaly_data
+            ])
 
-    _auc = auc(recall, precison)
-    logger.info('AUC')
-    logger.info(str(_auc))
+            print('Length of test data', test_data_x.shape)
+            t1 = time.time()
+            res = model_obj.get_event_score(test_data_x)
+            print('Length of results ', len(res))
 
-    print('--------------------------')
-    plt.figure(figsize=[14, 8])
-    plt.plot(
-        recall,
-        precison,
-        color='blue', linewidth=1.75)
-
-    plt.xlabel('Recall', fontsize=15)
-    plt.ylabel('Precision', fontsize=15)
-    plt.title('Recall | AUC ' + str(_auc), fontsize=15)
-    f_name = 'precison-recall_1_test_' + '.png'
-    f_path = os.path.join(OP_DIR, f_name)
-    # plt.show()
-    # plt.savefig(f_path)
-    plt.close()
-    return
+            test_ids = list(test_ids)
 
 
-def viz_tsne(data):
-    from sklearn.manifold import TSNE
+            print('Length of results ', len(res))
 
-    X = np.array(data)
-    tsne = TSNE(
-        n_components=2,
-        verbose=1,
-        perplexity=100,
-        n_iter=500
-    )
+            res = list(res)
+            _id_score_dict = {
+                id: _res for id, _res in zip(test_ids, res)
+            }
+            t2 = time.time()
+            time_taken = t2-t1
+            print(time_taken)
+            logger.info('Time taken')
+            logger.info(time_taken)
+            '''
+            sort by ascending 
+            since lower likelihood means anomalous
+            '''
+            tmp = sorted(
+                _id_score_dict.items(),
+                key=operator.itemgetter(1)
+            )
+            sorted_id_score_dict = OrderedDict()
 
-    tsne_results = tsne.fit_transform(X)
-    fig = plt.figure(figsize=(8, 8))
-    ax1 = fig.add_subplot(111)
-    ax1.scatter(tsne_results[:, 0], tsne_results[:, 1], c='g', s=18)
-    plt.tight_layout()
-    plt.show()
+            for e in tmp:
+                sorted_id_score_dict[e[0]] = e[1][0]
+
+            recall, precison = eval.precision_recall_curve(
+                sorted_id_score_dict,
+                anomaly_id_list=test_anomaly_ids,
+                bounds=bounds
+            )
+            '''
+            Save the precision recall values
+            Later to be plotted in ipynb
+            '''
+            recall_str = ','.join([str(_) for _ in recall])
+            precision_str = ','.join([str(_) for _ in precison])
+            logger.info(precision_str)
+            logger.info(recall_str)
+
+            _auc = auc(recall, precison)
+            logger.info('AUC')
+            logger.info(str(_auc))
+
+            print('--------------------------')
 
 
-def main(exec_dir=None):
+
+def main():
     global embedding_dims
     global SAVE_DIR
     global _DIR
@@ -404,10 +279,10 @@ def main(exec_dir=None):
     global DOMAIN_DIMS
     global logger
 
-    # with open(CONFIG_FILE) as f:
-    #     CONFIG = yaml.safe_load(f)
-    #
-    # _DIR = exec_dir
+    with open(CONFIG_FILE) as f:
+        CONFIG = yaml.safe_load(f)
+
+
     DATA_DIR = os.path.join(CONFIG['DATA_DIR'], _DIR)
 
     setup_general_config()
@@ -432,16 +307,56 @@ def main(exec_dir=None):
         _DIR,
         c=1
     )
-
+    train_x_neg = train_x_neg[:,:12,:]
     testing_dict = {}
 
     for _c in range(1, 3 + 1):
-        _, _, test_pos, test_anomaly, _ = data_fetcher.get_data_v3(
-            CONFIG['DATA_DIR'],
-            _DIR,
-            c=_c
-        )
-        testing_dict[_c] = [test_pos, test_anomaly]
+        testing_dict[_c] = {}
+        for s in [1,2,3] :
+            _, _, test_pos, test_anomaly, _ = data_fetcher.get_data_v3(
+                CONFIG['DATA_DIR'],
+                _DIR,
+                c=_c
+            )
+            compreXdata_loc = './../../comprex/comprexData/' + _DIR
+            test_anomalies_ids_file = os.path.join(compreXdata_loc, "id_test_anomalies_c{}_sample{}.txt".format(_c,s))
+            df_0 = pd.read_csv(test_anomalies_ids_file,header=None)
+            test_anomalies_ids = list(df_0[0])
+
+            test_anomaly_idList = test_anomaly[0]
+            anomaly_data = test_anomaly[1]
+
+            tmp_df = pd.DataFrame(
+                np.hstack([np.reshape(test_anomaly_idList,[-1,1]),anomaly_data])
+            )
+            print(len(tmp_df))
+            tmp_df = tmp_df.loc[tmp_df[0].isin(test_anomalies_ids)]
+            print(len(tmp_df))
+            test_anomaly_idList = (tmp_df[0]).values
+            del tmp_df[0]
+            anomaly_data = tmp_df.values
+            test_anomaly = [test_anomaly_idList, anomaly_data]
+
+            # ----
+
+            test_set_ids_file = os.path.join(compreXdata_loc, "id_test_set_c{}_sample{}.txt".format(_c, s))
+            df_0 = pd.read_csv(test_set_ids_file, header=None)
+            test_set_ids = list(df_0[0])
+
+            test_normal_idList = test_pos[0]
+            test_x = test_pos[1]
+
+            tmp_df = pd.DataFrame(
+                np.hstack([np.reshape(test_normal_idList, [-1, 1]), test_x])
+            )
+            tmp_df = tmp_df.loc[tmp_df[0].isin(test_set_ids)]
+            test_normal_idList = (tmp_df[0]).values
+            del tmp_df[0]
+            test_x = tmp_df.values
+            test_pos = [test_normal_idList, test_x]
+            testing_dict[_c][s] = [test_pos, test_anomaly]
+
+
 
     DOMAIN_DIMS = domain_dims
     print('Data shape', train_x_pos.shape)
@@ -452,20 +367,18 @@ def main(exec_dir=None):
         train_x_neg,
         testing_dict
     )
-
-
     logger.info('-------------------')
 
-
-
-# ----------------------------------------------------------------- #
-# find out which model works best
-# ----------------------------------------------------------------- #
 
 with open(CONFIG_FILE) as f:
     CONFIG = yaml.safe_load(f)
 
-log_file = 'results_v2.log'
+try:
+    log_file = CONFIG['log_file']
+except:
+    log_file = 'small _sample.log'
+
+log_file = 'small_sample.log'
 
 _DIR = CONFIG['_DIR']
 logger = logging.getLogger('main')
@@ -482,5 +395,7 @@ handler = logging.FileHandler(os.path.join(OP_DIR, log_file))
 handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 logger.info(' Info start ')
-logger.info(' -----> ' + _DIR)
+logger.info('-------------------')
+logger.info(CONFIG[_DIR])
+logger.info('-------------------')
 main()

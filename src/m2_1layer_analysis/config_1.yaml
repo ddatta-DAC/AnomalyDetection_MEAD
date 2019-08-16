@@ -1,5 +1,5 @@
 'DATA_DIR': '../../generated_data'
-'_DIR' : 'china_import'
+'_DIR' : 'us_import'
 'OP_DIR' : 'output'
 'SAVE_DIR' : 'save_dir'
 'MODEL_NAME' : 'model_v1_2'
@@ -8,33 +8,33 @@
 'num_jobs' : 1
 'china_import':
   'learning_rate' : 0.001
-  'use_pretrained' : False
+  'use_pretrained' : True
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
-  'saved_model_file' : False
+  'saved_model_file' : 'frozen_model_v1_212_1565729000.pb'
   'num_epochs' : 10
   'op_dims' : 12
   'batchsize': 128
   'num_neg_samples' : 15
 'peru_export':
   'learning_rate' : 0.0005
-  'use_pretrained' : False
+  'use_pretrained' : True
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
-  'saved_model_file' : False
+  'saved_model_file' : 'frozen_model_v1_210_1565707530.pb'
   'num_epochs' : 25
   'op_dims' : 10
   'batchsize': 128
   'num_neg_samples' : 15
 'us_import':
   'learning_rate' : 0.0005
-  'use_pretrained' : False
+  'use_pretrained' : True
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
-  'saved_model_file' : False
+  'saved_model_file' : 'frozen_model_v1_212_1565737663.pb'
   'num_epochs' : 25
   'op_dims' : 12
   'batchsize': 128

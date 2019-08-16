@@ -308,7 +308,7 @@ def main():
         recall, precison = eval.precision_recall_curve(
             sorted_id_score_dict,
             anomaly_id_list=test_anomaly_ids,
-            bounds = bounds
+
         )
 
         recall_str = ','.join([str(_) for _ in recall])
