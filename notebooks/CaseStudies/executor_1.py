@@ -262,25 +262,6 @@ def process(
     return
 
 
-def viz_tsne(data):
-    from sklearn.manifold import TSNE
-
-    X = np.array(data)
-    tsne = TSNE(
-        n_components=2,
-        verbose=1,
-        perplexity=100,
-        n_iter=500
-    )
-
-    tsne_results = tsne.fit_transform(X)
-    fig = plt.figure(figsize=(8, 8))
-    ax1 = fig.add_subplot(111)
-    ax1.scatter(tsne_results[:, 0], tsne_results[:, 1], c='g', s=18)
-    plt.tight_layout()
-    plt.show()
-
-
 def main():
     global embedding_dims
     global SAVE_DIR
