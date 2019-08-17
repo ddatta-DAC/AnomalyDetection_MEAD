@@ -1,23 +1,15 @@
 'DATA_DIR': '../../generated_data'
-<<<<<<< HEAD
-'_DIR' : 'china_export'
-=======
-'_DIR' : 'peru_export'
->>>>>>> 473b80172f79513181a224cf0a90223f509d35e0
+'_DIR' : 'china_import2'
 'OP_DIR' : 'output'
 'SAVE_DIR' : 'save_dir'
-'K' : 2
-'peru_export' :
-  'log_file' : 'results_k2.log'
-'china_import' :
-<<<<<<< HEAD
-  'log_file' : 'results_1.log'
+'K' : 1
+'peru_export2' :
+  'log_file' : 'results_k1.log'
+'china_import2' :
+  'log_file' : 'results_k1.log'
 'us_import' :
-  'log_file' : 'results_1.log'
-=======
+  'log_file' : 'results_k1.log'
+'us_import2' :
   'log_file' : 'results_k2.log'
-'us_import' :
-  'log_file' : 'results_k2.log'
->>>>>>> 473b80172f79513181a224cf0a90223f509d35e0
 'china_export':
   'log_file': 'results_k2.log'
