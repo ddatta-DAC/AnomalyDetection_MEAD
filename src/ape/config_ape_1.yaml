@@ -52,4 +52,4 @@
   'batch_size': 128
   'saved_model_file' : 'model_ape_12_k_24_frozen.pb'
   'use_pretrained': False
-  'learning_rate': 0.001
+  'learning_rate': 0.0001
