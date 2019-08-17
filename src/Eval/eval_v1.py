@@ -34,7 +34,7 @@ def precision_recall_curve(
         max_val = bounds[1]
     step = (max_val-min_val)/100
     prev_cand_count = 0
-
+    print(min_val,max_val)
     for t in np.arange(min_val, max_val + step, step):
 
         # find number of records marked anomalies at this threshold

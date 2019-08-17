@@ -1,0 +1,18 @@
+ Info start 
+ -----> china_import2
+-------------------
+DIR china_import2
+ Info start 
+ -----> china_import2
+-------------------
+DIR china_import2
+ >> c = 1
+AUC
+0.8345639475372227
+ >> c = 2
+AUC
+0.9488276066306301
+ >> c = 3
+AUC
+0.9832609675236328
+-------------------
