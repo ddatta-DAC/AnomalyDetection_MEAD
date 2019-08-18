@@ -429,11 +429,11 @@ class model_ape_1:
 
         losses = []
         for e in range(self.num_epochs):
-            # print('epoch', e + 1)
+            print('epoch', e + 1)
             st = time.time()
             for _b in range(num_batches):
-                # if _b % 100 == 0:
-                #     # print('Batch :', _b)
+                if _b % 100 == 0:
+                    print('Batch :', _b)
                 _x_pos = x_pos[_b * bs: (_b + 1) * bs]
                 _x_neg = x_neg[_b * bs: (_b + 1) * bs]
                 _term_2 = term_2[_b * bs: (_b + 1) * bs]
@@ -449,10 +449,11 @@ class model_ape_1:
                         self.term_4: _term_4
                     }
                 )
-                # if _b % 100 == 0:
-                #     # print('Loss :', np.mean(loss))
+                batch_loss = np.mean(loss)
+                if _b % 10 == 0:
+                    print('Loss :', batch_loss)
 
-                losses.append(np.mean(loss))
+                losses.append(batch_loss)
 
             ed = time.time()
             # print('Time elapsed: ', ed - st)
