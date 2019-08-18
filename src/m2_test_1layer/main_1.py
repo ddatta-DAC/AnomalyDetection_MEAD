@@ -206,19 +206,19 @@ def process_all(
         test_ids = list(test_ids)
 
         bounds = []
-        training_pos_scores = model_obj.get_event_score(
-            train_x_pos
-        )
-        training_pos_scores = [_[0] for _ in training_pos_scores]
+        # training_pos_scores = model_obj.get_event_score(
+        #     train_x_pos
+        # )
+        # training_pos_scores = [_[0] for _ in training_pos_scores]
+        #
+        # train_noise = np.reshape(train_x_neg, [-1, train_x_pos.shape[-1]])
+        # training_noise_scores = model_obj.get_event_score(
+        #     train_noise
+        # )
+        # training_noise_scores = [_[0] for _ in training_noise_scores]
 
-        train_noise = np.reshape(train_x_neg, [-1, train_x_pos.shape[-1]])
-        training_noise_scores = model_obj.get_event_score(
-            train_noise
-        )
-        training_noise_scores = [_[0] for _ in training_noise_scores]
-
-        bounds.append(min(training_noise_scores))
-        bounds.append(max(training_pos_scores))
+        # bounds.append(min(training_noise_scores))
+        # bounds.append(max(training_pos_scores))
 
         print('Length of results ', len(res))
 
@@ -243,7 +243,7 @@ def process_all(
         recall, precison = eval.precision_recall_curve(
             sorted_id_score_dict,
             anomaly_id_list=test_anomaly_ids,
-            bounds=bounds
+            bounds=[0,1]
         )
 
         _auc = auc(recall, precison)

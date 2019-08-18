@@ -1,5 +1,5 @@
 'DATA_DIR': '../../generated_data'
-'_DIR' : 'peru_export2'
+'_DIR' : 'us_import3'
 'OP_DIR' : 'output'
 'SAVE_DIR' : 'save_dir'
 'MODEL_NAME': 'model_ape'
@@ -49,6 +49,13 @@
 'us_import2':
   'embed_size': 15
   'num_epochs': 10
+  'batch_size': 128
+  'saved_model_file' : 'model_ape_12_k_24_frozen.pb'
+  'use_pretrained': False
+  'learning_rate': 0.0001
+'us_import3':
+  'embed_size': 12
+  'num_epochs': 12
   'batch_size': 128
   'saved_model_file' : 'model_ape_12_k_24_frozen.pb'
   'use_pretrained': False
