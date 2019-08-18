@@ -1,9 +1,9 @@
 'DATA_DIR': '../../generated_data'
-'_DIR' : 'us_import3'
+'_DIR' : 'us_import2'
 'OP_DIR' : 'output'
 'SAVE_DIR' : 'save_dir'
 'MODEL_NAME': 'model_ape'
-'log_file': 'checkTime.log'
+'log_file': 'trainusimport2.log'
 'china_import':
   'embed_size': 10
   'num_epochs': 10
@@ -47,12 +47,12 @@
   'use_pretrained': False
   'learning_rate': 0.001
 'us_import2':
-  'embed_size': 15
-  'num_epochs': 10
-  'batch_size': 128
+  'embed_size': 16
+  'num_epochs': 12
+  'batch_size': 1024
   'saved_model_file' : 'model_ape_12_k_24_frozen.pb'
   'use_pretrained': False
-  'learning_rate': 0.0001
+  'learning_rate': 0.0005
 'us_import3':
   'embed_size': 12
   'num_epochs': 12
