@@ -17,3 +17,6 @@ wwf_data_v1
 **/.ipynb_checkpoints/**
 /notebooks/CaseStudies/generated_data/
 /notebooks/.ipynb_checkpoints/
+/comprex/comprexData/
+/comprex/data/
+/notebooks/CaseStudies/output/

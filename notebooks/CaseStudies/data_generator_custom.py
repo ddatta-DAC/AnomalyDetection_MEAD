@@ -17,13 +17,11 @@ import math
 
 def get_regex(_type):
     global DIR
-    if DIR == 'us_import':
+    if DIR == 'us_import2':
         if _type == 'train':
             return '*0[1-6]**2015*.csv'
         if _type == 'test':
             return '*_0[7-9]_**2015*.csv'
-
-
 
 def get_files(_type='all'):
     global DIR
@@ -81,7 +79,7 @@ def set_up_config():
     use_cols = CONFIG[DIR]['use_cols']
     freq_bound = CONFIG[DIR]['low_freq_bound']
     num_neg_samples_ape = CONFIG[DIR]['num_neg_samples_ape']
-    freq_bound = CONFIG[DIR]['low_freq_bound']
+    print('USE Cols ', use_cols)
     column_value_filters = CONFIG[DIR]['column_value_filters']
     num_neg_samples_v1 = CONFIG[DIR]['num_neg_samples_v1']
     return
@@ -195,6 +193,7 @@ def collate(file_list):
     all_cols.extend(feature_cols)
     print(all_cols)
     _master_df = _master_df[all_cols]
+    print('>>> Columns', _master_df.columns)
     return _master_df
 
 
@@ -325,8 +324,9 @@ def create_train_test_sets():
         train_master_df,
         save_dir
     )
-    with open('col_val2id_dict.pkl', 'wb') as fh:
+    with open(os.path.join(save_dir,DIR,'col_val2id_dict.pkl'), 'wb') as fh:
         pickle.dump(col_val2id_dict, fh, pickle.HIGHEST_PROTOCOL)
+        
     new_test_df = setup_testing_data(
         test_master_df,
         col_val2id_dict
@@ -991,10 +991,10 @@ def create_model_data_v1():
 
 def main():
     set_up_config()
-    # create_train_test_sets()
+    create_train_test_sets()
     # create_negative_samples_ape()
     # create_ape_model_data()
-    # create_negative_samples_v1()
+    create_negative_samples_v1()
     create_model_data_v1()
     return
 
