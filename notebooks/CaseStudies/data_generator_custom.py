@@ -324,7 +324,7 @@ def create_train_test_sets():
         train_master_df,
         save_dir
     )
-    with open(os.path.join(save_dir,DIR,'col_val2id_dict.pkl'), 'wb') as fh:
+    with open(os.path.join(save_dir,'col_val2id_dict.pkl'), 'wb') as fh:
         pickle.dump(col_val2id_dict, fh, pickle.HIGHEST_PROTOCOL)
         
     new_test_df = setup_testing_data(
