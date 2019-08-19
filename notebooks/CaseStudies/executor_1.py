@@ -32,8 +32,6 @@ try:
 except:
     from .src.Eval import eval_v1 as eval
 
-
-
 # ------------------------------------ #
 
 cur_path = '/'.join(

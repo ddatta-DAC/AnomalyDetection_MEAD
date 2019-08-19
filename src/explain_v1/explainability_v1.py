@@ -36,7 +36,7 @@ for _ds, _dn in zip(domain_sizes, domain_names):
     a = np.zeros([_ds, emb_size])
     domain_emb_dict[domain_name2id[_dn]] = a
 
-domain_emb_dict[1].shape
+
 num_cols = train_x_emb.shape[1]
 for _c in range(num_cols):
     ids = train_x[:, _c]
@@ -151,10 +151,9 @@ def process(c, _random=False):
     print('Avg hit rate ', tot_hr / i)
     return  ahr
 
-
 logger = logging.getLogger('main')
 logger.setLevel(logging.INFO)
-log_file = 'explainability_results_v1.log'
+log_file = 'explainability_results_v2.log'
 
 handler = logging.FileHandler(os.path.join(log_file))
 handler.setLevel(logging.INFO)
@@ -168,10 +167,10 @@ def main(RANDOM):
     logger.info('-------------------')
     logger.info(RANDOM)
     res = []
-    ahr = process(1,RANDOM)
-    res.append(ahr)
-    logger.info('c ='+str(1))
-    logger.info(ahr)
+    # ahr = process(1,RANDOM)
+    # res.append(ahr)
+    # logger.info('c ='+str(1))
+    # logger.info(ahr)
 
     ahr = process(2,RANDOM)
     res.append(ahr)
@@ -184,7 +183,7 @@ def main(RANDOM):
     logger.info(ahr)
 
     print(' Average ', np.mean(res))
-    logger.info('Average over 3 ' + str(np.mean(res)))
+    logger.info('Average over 2 ' + str(np.mean(res)))
     logger.info('-------------------')
 
 
