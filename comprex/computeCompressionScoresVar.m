@@ -2,16 +2,14 @@ function [scores] = computeCompressionScoresVar( datafile, CTfile )
 
 load(CTfile);
 size(CT)
-
+[CT] = modify_CT(CT)
 data = textread(datafile);
 [N f] = size(data)
-
 
 
 scores = zeros(N,1);
 
 for i=1:N
-
     d = data(i,:);
     
     for j=1:size(CT,1)
@@ -27,16 +25,16 @@ for i=1:N
 			% dd: remaining uncovered part
 			if(covers)
 				scores(i) = scores(i) + codeLens(k);
-				assert(scores(i)<inf)
+%    				assert(scores(i)<inf)
+                if scores(i)>=inf
+                    scores(i) = realmax('single');
+                end
 			end
 			if(length(dd) == 0)
 				break;
 			end
-		end
-		
-		
+        end
     end
-
 end
 
 % --------------------
@@ -51,11 +49,8 @@ return
  
 [sscores ind] = sort(scores,'descend');
 
-
 %dlmwrite(strcat(CTfile,'_sscores.txt'), [sscores ind]);
 %return;
-
-
 
 %mod = load(matdatafile)
 %label = mod.label;
@@ -68,7 +63,6 @@ disp(label)
 
 val = unique(label);
 c = histc(label,1:1:max(val));
-
 tk = length(label);
 sizes = c(label(ind(1:tk)));
 ix = find(sizes == min(sizes));
@@ -82,14 +76,12 @@ dlmwrite(strcat(CTfile,'_topk.txt'), topk, 'delimiter','\t')
 % load 'data/email'
 % email = email(ind(1:k));
 % save('topk_email.mat','email')
-
 function [dd covers] = isincover (dd, elj)
 	%ind = ismember(dd, elj(1)); 
 	%for t=2:length(elj)
 	%	ind = ind + ismember(dd, elj(t)); 
 	%end
 	[trash, ai, trash] = intersect(dd, elj);
-	
 	
 	%if(sum(ind) == length(elj)) %includes/covers this element
 	if(length(ai) == length(elj)) %includes/covers this element
@@ -101,7 +93,5 @@ function [dd covers] = isincover (dd, elj)
 		covers = false;
 	end
 end
-
-
 end
 

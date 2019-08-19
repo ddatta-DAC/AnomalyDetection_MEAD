@@ -310,9 +310,9 @@ def main():
     train_x_neg = train_x_neg[:,:12,:]
     testing_dict = {}
 
-    for _c in range(1, 3 + 1):
+    for _c in range(2, 3 + 1):
         testing_dict[_c] = {}
-        for s in [1,2,3] :
+        for s in [1] :
             _, _, test_pos, test_anomaly, _ = data_fetcher.get_data_v3(
                 CONFIG['DATA_DIR'],
                 _DIR,

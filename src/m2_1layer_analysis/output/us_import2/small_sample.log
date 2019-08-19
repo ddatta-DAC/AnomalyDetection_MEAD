@@ -1,0 +1,6 @@
+ Info start 
+-------------------
+{'learning_rate': 0.0005, 'use_pretrained': False, 'show_loss_figure': False, 'save_loss_figure': False, 'use_bias': True, 'saved_model_file': 'frozen_model_v1_214_1566057286.pb', 'num_epochs': 25, 'op_dims': 14, 'batchsize': 128, 'num_neg_samples': 15}
+-------------------
+-------------------
+DIR us_import2
