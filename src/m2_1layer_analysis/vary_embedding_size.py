@@ -21,7 +21,6 @@ sys.path.append('./..')
 sys.path.append('./../../.')
 
 
-
 try:
     import src.m2_test_1layer.tf_model_3_withNorm as tf_model
 except:
@@ -322,7 +321,7 @@ def vary_embedding_size():
 
     testing_dict = {}
 
-    for _c in range(1, 3 + 1):
+    for _c in range(2, 3 + 1):
         _, _, test_pos, test_anomaly, _ = data_fetcher.get_data_v3(
             CONFIG['DATA_DIR'],
             _DIR,
@@ -344,17 +343,16 @@ def vary_embedding_size():
         )
     logger.info('-------------------')
 
-for _exec_dir in ['us_import','china_export','china_import','peru_export']:
+for _exec_dir in ['china_import2','china_export','peru_export2','us_import3','us_import2']:
 
     with open(CONFIG_FILE) as f:
         CONFIG = yaml.safe_load(f)
     CONFIG['_DIR'] = _exec_dir
     try:
         log_file = CONFIG['log_file']
-        log_file = 'vary_embedding_size_1.log'
+        log_file = 'vary_embedding_size_2.log'
     except:
         log_file = 'analysis.log'
-
 
     _DIR = CONFIG['_DIR']
     logger = logging.getLogger('main')
@@ -374,8 +372,7 @@ for _exec_dir in ['us_import','china_export','china_import','peru_export']:
     logger.info('-------------------')
     logger.info(CONFIG[_DIR])
     logger.info('-------------------')
-
     vary_embedding_size()
-
+    handler.close()
 
 
