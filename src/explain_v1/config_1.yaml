@@ -1,10 +1,10 @@
 'DATA_DIR': '../../generated_data'
-'_DIR' : 'china_import2'
+'_DIR' : 'us_import3'
 'OP_DIR' : 'output'
 'SAVE_DIR' : 'save_dir'
 'MODEL_NAME' : 'model_v1_2'
 'eval_type' : 1
-'log_file' : 'main.log'
+'log_file' : 'explian_V2.log'
 'num_jobs' : 1
 'china_export':
   'learning_rate' : 0.0005
@@ -41,7 +41,7 @@
   'num_neg_samples' : 15
 'us_import2':
   'learning_rate' : 0.0005
-  'use_pretrained' : True
+  'use_pretrained' : False
   'show_loss_figure' : False
   'save_loss_figure' : False
   'use_bias' : True
