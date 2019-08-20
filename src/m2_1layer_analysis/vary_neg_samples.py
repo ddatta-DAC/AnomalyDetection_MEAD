@@ -94,8 +94,6 @@ def setup_general_config():
 
     if not os.path.exists(SAVE_DIR):
         os.mkdir(os.path.join(SAVE_DIR))
-
-    # logger.info(pprint.pformat(CONFIG[_DIR], indent=4))
     return
 
 
@@ -146,18 +144,14 @@ def process_all(
         predef_neg_samples = 5
 ):
     global logger
-
+    CONFIG[_DIR]['num_neg_samples'] = predef_neg_samples
     logger.info('setting up number of negative samples ')
     logger.info(CONFIG[_DIR]['num_neg_samples'])
 
 
     train_x_neg = train_x_neg[:,:predef_neg_samples,:]
     num_neg_samples = train_x_neg.shape[1]
-
-
-    CONFIG[_DIR]['num_neg_samples'] = predef_neg_samples
     model_obj = set_up_model(CONFIG, _DIR)
-
     _use_pretrained = CONFIG[_DIR]['use_pretrained']
 
     if _use_pretrained is True:
@@ -185,10 +179,8 @@ def process_all(
         )
 
     # 3 test cases by value of c
+    _auc_list = []
     for _c, test_data_item in testing_dict.items():
-        print('----->', _c)
-
-        logger.info(' >> c = ' + str(_c))
         test_pos = test_data_item[0]
         test_anomaly = test_data_item[1]
 
@@ -263,10 +255,9 @@ def process_all(
         logger.info(recall_str)
 
         _auc = auc(recall, precison)
-        logger.info('AUC')
-        logger.info(str(_auc))
-
-        print('--------------------------')
+        _auc_list.append(_auc)
+    logger.info('average AUC : ' + str(np.mean(_auc_list)))
+    print('--------------------------')
 
 
 def viz_tsne(data):
@@ -325,12 +316,12 @@ def vary_num_neg_samples():
     train_x_pos, train_x_neg, _, _, domain_dims = data_fetcher.get_data_v3(
         CONFIG['DATA_DIR'],
         _DIR,
-        c=1
+        c=2
     )
 
     testing_dict = {}
 
-    for _c in range(1, 3 + 1):
+    for _c in range(2, 3 + 1):
         _, _, test_pos, test_anomaly, _ = data_fetcher.get_data_v3(
             CONFIG['DATA_DIR'],
             _DIR,
@@ -340,9 +331,8 @@ def vary_num_neg_samples():
 
     DOMAIN_DIMS = domain_dims
     print('Data shape', train_x_pos.shape)
-
-    for ns in [15]:
-
+    ns_range = list(3,6,9,12,15)
+    for ns in ns_range:
         process_all(
             CONFIG,
             _DIR,
@@ -354,36 +344,31 @@ def vary_num_neg_samples():
     logger.info('-------------------')
 
 
-with open(CONFIG_FILE) as f:
-    CONFIG = yaml.safe_load(f)
+for _exec_dir in ['china_import2','peru_export2','china_export','us_import3','us_import2']:
+    log_file = 'vary_negative_samples_V2.log'
+    with open(CONFIG_FILE) as f:
+        CONFIG = yaml.safe_load(f)
+    CONFIG['_DIR'] = _exec_dir
+    _DIR = CONFIG['_DIR']
+    logger = logging.getLogger('main')
+    logger.setLevel(logging.INFO)
+    OP_DIR = os.path.join(CONFIG['OP_DIR'], _DIR)
 
-try:
-    log_file = CONFIG['log_file']
-    log_file = 'vary_negative_samples.log'
-except:
-    log_file = 'analysis.log'
+    if not os.path.exists(CONFIG['OP_DIR']):
+        os.mkdir(CONFIG['OP_DIR'])
 
+    if not os.path.exists(OP_DIR):
+        os.mkdir(OP_DIR)
 
-_DIR = CONFIG['_DIR']
-logger = logging.getLogger('main')
-logger.setLevel(logging.INFO)
-OP_DIR = os.path.join(CONFIG['OP_DIR'], _DIR)
+    handler = logging.FileHandler(os.path.join(OP_DIR, log_file))
+    handler.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    logger.info(' Info start ')
+    logger.info('-------------------')
+    logger.info(CONFIG[_DIR])
+    logger.info('-------------------')
 
-if not os.path.exists(CONFIG['OP_DIR']):
-    os.mkdir(CONFIG['OP_DIR'])
-
-if not os.path.exists(OP_DIR):
-    os.mkdir(OP_DIR)
-
-handler = logging.FileHandler(os.path.join(OP_DIR, log_file))
-handler.setLevel(logging.INFO)
-logger.addHandler(handler)
-logger.info(' Info start ')
-logger.info('-------------------')
-logger.info(CONFIG[_DIR])
-logger.info('-------------------')
-
-vary_num_neg_samples()
-
-
+    vary_num_neg_samples()
+    logger.handlers.remove(handler)
+    handler.close()
 

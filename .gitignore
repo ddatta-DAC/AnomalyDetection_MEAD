@@ -20,3 +20,5 @@ wwf_data_v1
 /comprex/comprexData/
 /comprex/data/
 /notebooks/CaseStudies/output/
+/src/explain_v1/output/us_import3/train_embedding_values.pkl
+/src/explain_v1/output/us_import2/train_embedding_values.pkl

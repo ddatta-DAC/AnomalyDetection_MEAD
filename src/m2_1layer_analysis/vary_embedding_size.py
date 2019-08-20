@@ -343,7 +343,7 @@ def vary_embedding_size():
         )
     logger.info('-------------------')
 
-for _exec_dir in ['china_import2','china_export','peru_export2','us_import3','us_import2']:
+for _exec_dir in ['us_import2']:
 
     with open(CONFIG_FILE) as f:
         CONFIG = yaml.safe_load(f)
