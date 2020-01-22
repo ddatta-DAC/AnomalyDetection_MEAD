@@ -84,21 +84,21 @@ def process_part1(DIR):
     list_columns = ['PanjivaRecordID']
     list_columns.extend(ordered_domains)
     train_df = train_df[list_columns]
-    train_df.to_csv(os.path.join(TARGET_DIR,train_data_file ))
+    train_df.to_csv(os.path.join(TARGET_DIR,train_data_file ),index=False)
 
     test_df = pd.read_csv(os.path.join(SOURCE_DIR, test_data_file ))
     test_df = test_df.rename(columns={'hscode_6':'HSCode'})
     list_columns = ['PanjivaRecordID']
     list_columns.extend(ordered_domains)
     test_df = test_df[list_columns]
-    test_df.to_csv(os.path.join(TARGET_DIR,test_data_file ))
+    test_df.to_csv(os.path.join(TARGET_DIR,test_data_file ),index=False)
 
     mead_neg_samples_df = pd.read_csv( os.path.join(SOURCE_DIR,MEAD_negative_samples_file), low_memory=False )
     mead_neg_samples_df = mead_neg_samples_df.rename(columns={'hscode_6':'HSCode'})
     list_columns = ['PanjivaRecordID', 'NegSampleID']
     list_columns.extend(ordered_domains)
     mead_neg_samples_df = mead_neg_samples_df[list_columns]
-    mead_neg_samples_df.to_csv(os.path.join(TARGET_DIR, MEAD_negative_samples_file))
+    mead_neg_samples_df.to_csv(os.path.join(TARGET_DIR, MEAD_negative_samples_file),index=False)
 
 
     ape_ns_df= pd.read_csv(os.path.join(SOURCE_DIR,APE_negative_samples_file), low_memory=False)
@@ -107,24 +107,16 @@ def process_part1(DIR):
     list_columns = ['PanjivaRecordID', 'NegSampleID', 'term_2', 'term_4']
     list_columns.extend(ordered_domains)
     ape_ns_df = ape_ns_df[list_columns]
-    ape_ns_df.to_csv(os.path.join(TARGET_DIR, APE_negative_samples_file))
+    ape_ns_df.to_csv(os.path.join(TARGET_DIR, APE_negative_samples_file),index=False)
     
     return
 
 # ===================================================================== #
 
-DIR_LIST = ['china_export','us_import2', 'us_import3']
+DIR_LIST = ['china_export','us_import2', 'us_import3','china_import']
 for DIR in DIR_LIST:
     process_part1(DIR)
 
-
-# In[45]:
-
-
-
-
-
-# In[ ]:
 
 
 
